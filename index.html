@@ -81,11 +81,18 @@ select{width:100%;padding:5px 8px;border:1px solid var(--brd);border-radius:6px;
 .compare .lbl .info{font-weight:400;color:#64748b}
 .cwrap{flex:1;display:flex;align-items:center;justify-content:center;min-height:0;overflow:hidden;position:relative}
 .cwrap canvas{max-width:100%;max-height:100%;object-fit:contain}
+.cwrap canvas[data-zoomable],.step-item canvas[data-zoomable]{cursor:pointer}
 .cwrap .ph{color:#475569;font-size:.8rem}
 .bottom-bar{display:flex;height:160px;min-height:160px;border-top:2px solid #333;flex-shrink:0;background:#0f172a}
 .steps{display:flex;flex:3;overflow-x:auto}
-.step-item{flex:1;min-width:120px;display:flex;flex-direction:column;border-right:1px solid #1e293b}
-.step-item .slbl{padding:4px 8px;font-size:.6rem;font-weight:600;color:#64748b;text-transform:uppercase;background:#0f172a;flex-shrink:0}
+.step-item{flex:1;min-width:120px;display:flex;flex-direction:column;border-right:1px solid #1e293b;position:relative;transition:opacity .2s}
+.step-item .slbl{padding:3px 8px;font-size:.58rem;font-weight:600;color:#64748b;text-transform:uppercase;background:#0f172a;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:color .2s}
+.step-item.s-on .slbl{color:#a78bfa}
+.step-item.s-off{opacity:.38}
+.step-item.s-off .slbl{color:#374151}
+.step-bypass{position:absolute;inset:0;top:22px;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:4}
+.step-bypass span{background:rgba(15,23,42,.72);color:#475569;font-size:.55rem;font-weight:700;padding:2px 7px;border-radius:8px;letter-spacing:.5px;text-transform:uppercase}
+.step-item.s-on .step-bypass{display:none}
 .step-item .scwrap{flex:1;display:flex;align-items:center;justify-content:center;background:#111;min-height:0;overflow:hidden}
 .step-item .scwrap canvas{max-width:100%;max-height:100%}
 .hist-panel{flex:2;display:flex;border-left:2px solid #333}
@@ -284,7 +291,7 @@ select{width:100%;padding:5px 8px;border:1px solid var(--brd);border-radius:6px;
 <div class="sec">
 <div class="sec-head" onclick="toggleSec(this)"><span class="num">8</span>Morphology<span class="tip-wrap"><span class="tip-icon" data-tip="เปลี่ยนรูปร่างวัตถุในภาพ: Erosion=กัดขอบ, Dilation=ขยายขอบ, Opening=ลบ noise, Closing=เติมรู ปรับ SE shape/size และจำนวน iterations (Slice 7)" onmouseenter="showTip(this,event)" onmouseleave="hideTip()">?</span></span><button class="sec-rst" onclick="event.stopPropagation();resetSec(8)" title="Reset section">↺</button><span class="chevron">▼</span></div>
 <div class="sec-body">
-<div class="cg"><label>Operation <span class="tip-wrap"><span class="tip-icon" data-tip="Erosion=กัดขอบ, Dilation=ขยายขอบ, Opening=ลบ noise เล็ก, Closing=เติมรู, Thickening=ขยายโครงสร้างบาง" onmouseenter="showTip(this,event)" onmouseleave="hideTip()">?</span></span></label><select id="morphOp"><option value="none">None</option><option value="erosion">Erosion</option><option value="dilation">Dilation</option><option value="opening">Opening</option><option value="closing">Closing</option><option value="thinning">Thinning (Skeleton)</option><option value="thickening">Thickening</option></select></div>
+<div class="cg"><label>Operation <span class="tip-wrap"><span class="tip-icon" data-tip="Erosion=กัดขอบ, Dilation=ขยายขอบ, Opening=ลบ noise เล็ก, Closing=เติมรู, Thinning (Skeleton)=ลดเหลือ skeleton 1px กว้าง ใช้ Zhang-Suen algorithm, Thickening=ขยายโครงสร้างบาง (NOT·thin·NOT)" onmouseenter="showTip(this,event)" onmouseleave="hideTip()">?</span></span></label><select id="morphOp"><option value="none">None</option><option value="erosion">Erosion</option><option value="dilation">Dilation</option><option value="opening">Opening</option><option value="closing">Closing</option><option value="thinning">Thinning (Skeleton)</option><option value="thickening">Thickening</option></select></div>
 <div class="cg"><label>SE Shape <span class="tip-wrap"><span class="tip-icon" data-tip="รูปร่าง Structuring Element: Square=ทุกทิศ, Cross=แนวตั้ง/นอน, Circle=กลมสม่ำเสมอ" onmouseenter="showTip(this,event)" onmouseleave="hideTip()">?</span></span></label><select id="seShape"><option value="square">Square</option><option value="cross">Cross</option><option value="circle">Circle</option></select></div>
 <div class="cg"><label>SE Size <span class="tip-wrap"><span class="tip-icon" data-tip="ขนาด Structuring Element: ใหญ่ขึ้น = ผลกระทบมากขึ้น 3×3=เบา, 7×7=หนัก" onmouseenter="showTip(this,event)" onmouseleave="hideTip()">?</span></span></label><select id="seSize"><option value="3">3x3</option><option value="5">5x5</option><option value="7">7x7</option></select></div>
 <div class="cg"><label>Iterations <span class="tip-wrap"><span class="tip-icon" data-tip="จำนวนรอบที่ทำซ้ำ: มากขึ้น = ผลสะสมมากขึ้น เช่น erosion 3 รอบ = กัดขอบลึก 3 ชั้น" onmouseenter="showTip(this,event)" onmouseleave="hideTip()">?</span></span></label><div class="rr"><input type="range" id="morphIter" min="1" max="10" value="1"><span class="v" id="morphIterVal">1</span></div></div>
@@ -319,7 +326,7 @@ select{width:100%;padding:5px 8px;border:1px solid var(--brd);border-radius:6px;
 <button class="btn btn-u" onclick="undoLast()" id="btnUndo" title="Undo (Ctrl+Z / ⌘Z)" disabled style="opacity:.45">↩ Undo</button>
 <button class="btn btn-s" onclick="resetAll()" title="Reset all">↺ Reset</button>
 <button class="btn btn-e" onclick="exportWithParams()" title="Export processed image with parameters (Ctrl+S)">⬆ Export</button>
-<button class="btn btn-s" id="btnZoom" onclick="toggleZoomMode()" title="เปิดโหมดซูม แล้วคลิก canvas เพื่อดูภาพแบบ zoom-in">🔍 Zoom</button>
+<button class="btn btn-s" id="btnZoom" onclick="toggleZoomMode()" title="ซูมผลลัพธ์ · ดับเบิลคลิก canvas ใดก็ได้เพื่อซูม">🔍 Zoom</button>
 <button class="btn btn-s" id="btnLabel" onclick="toggleLabelMode()" title="Add DICOM-style callout annotations">🏷 Label</button>
 <button class="btn btn-s" id="btnRuler" onclick="toggleRulerMode()" title="Measure pixel distance between two points">📏 Ruler</button>
 <button class="btn btn-s" id="btnProfile" onclick="toggleProfileMode()" title="Draw line profile: click 2 points on canvas to plot intensity along line">📈 Profile</button>
@@ -332,21 +339,21 @@ select{width:100%;padding:5px 8px;border:1px solid var(--brd);border-radius:6px;
 <div class="compare">
 <div class="half">
 <div class="lbl"><span>Original</span><span class="info" id="origInfo">900x900</span></div>
-<div class="cwrap"><canvas id="origCanvas" width="900" height="900" style="cursor: zoom-in;"></canvas><span class="ph" id="origPH" style="display: none;">Upload an image</span><div class="anno-overlay" id="annoOrig"></div></div>
+<div class="cwrap"><canvas id="origCanvas" width="900" height="900"></canvas><span class="ph" id="origPH" style="display: none;">Upload an image</span><div class="anno-overlay" id="annoOrig"></div></div>
 </div>
 <div class="half">
 <div class="lbl"><span>Processed</span><span class="info" id="procInfo">900x900</span><span id="psnrBadge" style="margin-left:6px;font-size:.6rem;background:#0f766e;color:#ccfbf1;padding:1px 6px;border-radius:8px;display:none"></span></div>
-<div class="cwrap"><canvas id="procCanvas" width="900" height="900" style="cursor: zoom-in;"></canvas><span class="ph" id="procPH" style="display: none;">Result here</span><div class="anno-overlay" id="annoProc"></div></div>
+<div class="cwrap"><canvas id="procCanvas" width="900" height="900"></canvas><span class="ph" id="procPH" style="display: none;">Result here</span><div class="anno-overlay" id="annoProc"></div></div>
 </div>
 </div>
 <div class="bottom-bar">
 <div class="steps">
-<div class="step-item"><div class="slbl">1. Noise</div><div class="scwrap"><canvas id="sc1" width="900" height="900" style="cursor: zoom-in;"></canvas></div></div>
-<div class="step-item"><div class="slbl">2. Contrast</div><div class="scwrap"><canvas id="sc2" width="900" height="900" style="cursor: zoom-in;"></canvas></div></div>
-<div class="step-item"><div class="slbl">3. FFT Domain</div><div class="scwrap" style="flex-direction:column"><div style="flex:1;position:relative;display:flex;align-items:center;justify-content:center;background:#111;min-height:0;overflow:hidden;width:100%"><div style="position:absolute;top:3px;left:4px;z-index:2;font-size:.58rem;color:#9ca3af;background:rgba(0,0,0,.6);padding:1px 5px;border-radius:3px;pointer-events:none">▲ Pre</div><canvas id="sc3" width="900" height="450" style="cursor:zoom-in;max-width:100%;max-height:100%"></canvas></div><div style="flex:1;position:relative;display:flex;align-items:center;justify-content:center;background:#111;min-height:0;overflow:hidden;width:100%;border-top:1px solid #1e293b"><div style="position:absolute;top:3px;left:4px;z-index:2;font-size:.58rem;color:#9ca3af;background:rgba(0,0,0,.6);padding:1px 5px;border-radius:3px;pointer-events:none">▼ Post</div><canvas id="sc3b" width="900" height="450" style="cursor:zoom-in;max-width:100%;max-height:100%"></canvas></div></div></div>
-<div class="step-item"><div class="slbl">4. Denoise</div><div class="scwrap"><canvas id="sc4" width="900" height="900" style="cursor: zoom-in;"></canvas></div></div>
-<div class="step-item"><div class="slbl">5. Segment</div><div class="scwrap"><canvas id="sc5" width="900" height="900" style="cursor: zoom-in;"></canvas></div></div>
-<div class="step-item"><div class="slbl">6. Morphology</div><div class="scwrap"><canvas id="sc6" width="900" height="900" style="cursor: zoom-in;"></canvas></div></div>
+<div class="step-item s-off" id="stitem1"><div class="slbl" id="slbl1">1. Noise</div><div class="step-bypass"><span>bypass</span></div><div class="scwrap"><canvas id="sc1" width="900" height="900"></canvas></div></div>
+<div class="step-item s-off" id="stitem2"><div class="slbl" id="slbl2">2. Contrast</div><div class="step-bypass"><span>bypass</span></div><div class="scwrap"><canvas id="sc2" width="900" height="900"></canvas></div></div>
+<div class="step-item s-off" id="stitem3"><div class="slbl" id="slbl3">3. Spatial / FFT</div><div class="step-bypass"><span>bypass</span></div><div class="scwrap" style="flex-direction:column"><div style="flex:1;position:relative;display:flex;align-items:center;justify-content:center;background:#111;min-height:0;overflow:hidden;width:100%"><div style="position:absolute;top:3px;left:4px;z-index:2;font-size:.58rem;color:#9ca3af;background:rgba(0,0,0,.6);padding:1px 5px;border-radius:3px;pointer-events:none">▲ Pre</div><canvas id="sc3" width="900" height="450" style="max-width:100%;max-height:100%"></canvas></div><div style="flex:1;position:relative;display:flex;align-items:center;justify-content:center;background:#111;min-height:0;overflow:hidden;width:100%;border-top:1px solid #1e293b"><div style="position:absolute;top:3px;left:4px;z-index:2;font-size:.58rem;color:#9ca3af;background:rgba(0,0,0,.6);padding:1px 5px;border-radius:3px;pointer-events:none">▼ Post</div><canvas id="sc3b" width="900" height="450" style="max-width:100%;max-height:100%"></canvas></div></div></div>
+<div class="step-item s-off" id="stitem4"><div class="slbl" id="slbl4">4. Denoise</div><div class="step-bypass"><span>bypass</span></div><div class="scwrap"><canvas id="sc4" width="900" height="900"></canvas></div></div>
+<div class="step-item s-off" id="stitem5"><div class="slbl" id="slbl5">5. Segment</div><div class="step-bypass"><span>bypass</span></div><div class="scwrap"><canvas id="sc5" width="900" height="900"></canvas></div></div>
+<div class="step-item s-off" id="stitem6"><div class="slbl" id="slbl6">6. Morphology</div><div class="step-bypass"><span>bypass</span></div><div class="scwrap"><canvas id="sc6" width="900" height="900"></canvas></div></div>
 </div>
 <div class="hist-panel">
 <div class="hist-half"><div class="hlbl">Hist: Original</div><div class="hcwrap"><canvas id="histOrig" width="162" height="131"></canvas></div></div>
@@ -361,15 +368,16 @@ select{width:100%;padding:5px 8px;border:1px solid var(--brd);border-radius:6px;
 <div class="help-overlay" id="helpOverlay" onclick="if(event.target===this)toggleHelp()">
 <div class="help-box">
 <div class="help-header">
-  <div><h2>📖 คู่มือการใช้งาน — Medical Image Enhancement</h2><p>เครื่องมือประมวลผลภาพทางรังสีสำหรับนักศึกษา มหาวิทยาลัยธรรมศาสตร์</p></div>
+  <div><h2>📖 คู่มือการใช้งาน</h2><p>Medical Image Enhancement · Thammasat University · Radiological Technology</p></div>
   <button class="help-close" onclick="toggleHelp()">✕</button>
 </div>
 <div class="help-body">
 
-<div class="help-sec">
-<h3>🚀 เริ่มต้นใช้งาน</h3>
-<p>อัปโหลดภาพ → ปรับ parameter ตาม section → กด <span class="kbd">Enter</span> หรือ <b>▶ Apply</b> → ดูผลลัพธ์ → กด <b>⬆ Export</b> เพื่อบันทึก</p>
-<div style="display:flex;flex-wrap:wrap;align-items:center;margin-top:8px">
+<!-- Pipeline flow -->
+<div class="help-sec" style="padding-bottom:4px">
+<h3>🚀 การใช้งานหลัก</h3>
+<p style="margin-bottom:8px">อัปโหลดภาพ → ปรับ parameter แต่ละขั้น → กด <span class="kbd">Enter</span> หรือ <b>▶ Apply</b> → ดูผลลัพธ์ → <b>⬆ Export</b></p>
+<div style="display:flex;flex-wrap:wrap;align-items:center;gap:2px">
 <span class="help-pill">📁 Upload</span><span class="help-arrow">›</span>
 <span class="help-pill">🔊 Noise</span><span class="help-arrow">›</span>
 <span class="help-pill">☀ Contrast</span><span class="help-arrow">›</span>
@@ -384,152 +392,66 @@ select{width:100%;padding:5px 8px;border:1px solid var(--brd);border-radius:6px;
 </div>
 
 <div class="help-row">
+<!-- Tools -->
 <div class="help-sec">
-<h3><span class="hbadge">2</span>Add Noise <small style="font-size:.65rem;font-weight:400;color:#9ca3af">(Slice 3)</small></h3>
+<h3>🛠 เครื่องมือ Overlay</h3>
 <ul>
-<li><b>Gaussian</b>: noise จากความร้อน sensor (AWGN) ปรับด้วย σ</li>
-<li><b>Salt & Pepper</b>: pixel ขาว/ดำสุ่ม จาก sensor เสีย ปรับด้วย density</li>
-<li><b>Poisson (Quantum)</b>: photon count น้อย พบใน X-ray dose ต่ำ</li>
-<li><b>Speckle</b>: multiplicative noise พบใน Ultrasound imaging</li>
+<li><b>🔍 Zoom</b>: <b>ดับเบิลคลิก</b> canvas ใด ๆ เพื่อเปิด zoom viewer · scroll = ซูม, ลาก = pan · กด <b>Compare</b> เทียบ Original/Processed · ปุ่ม Zoom เปิด Processed โดยตรง</li>
+<li><b>🏷 Label</b>: เปิดโหมด → คลิก canvas → พิมพ์ข้อความ → ได้ DICOM callout · ลาก anchor = ย้าย · ลาก <span style="display:inline-block;width:8px;height:8px;background:#8b5cf6;border-radius:1px;vertical-align:middle"></span> grip ขอบวงกลม = ปรับขนาด · คลิกสี = เปลี่ยนสี · × = ลบ · คลิกขวา = ลบ</li>
+<li><b>📏 Ruler</b>: คลิก 2 จุด → แสดงระยะ pixel · ลาก endpoint ปรับตำแหน่ง · คลิกขวาจุดแรก = ยกเลิก · render ใน Export</li>
+<li><b>📈 Profile</b>: คลิก 2 จุด → plot intensity ตามแนวเส้น (min/max/mean) · เส้นและจุดยังแสดงค้างไว้</li>
+<li><b>Hover pixel</b>: เลื่อน mouse บน canvas → แสดง [x, y] + intensity / RGB แบบ real-time</li>
+<li><b>🗑 Clear</b>: ล้าง overlay ทั้งหมด (annotation, ruler, profile)</li>
 </ul>
 </div>
-<div class="help-sec">
-<h3><span class="hbadge">3</span>Contrast Enhancement <small style="font-size:.65rem;font-weight:400;color:#9ca3af">(Slice 3)</small></h3>
-<ul>
-<li><b>Brightness/Contrast</b>: ปรับเชิงเส้น linear stretch</li>
-<li><b>Gamma γ</b>: γ&lt;1 = สว่างขึ้น, γ>1 = มืดลง (power-law)</li>
-<li><b>HE</b>: Histogram Equalization ทั้งภาพ global</li>
-<li><b>AHE</b>: Adaptive HE แยก tile 8×8 equalize เฉพาะพื้นที่</li>
-<li><b>CLAHE</b>: AHE + clip limit ป้องกัน noise over-amplify</li>
-</ul>
-</div>
-</div>
-
-<div class="help-row">
-<div class="help-sec">
-<h3><span class="hbadge">4</span>Spatial Enhancement <small style="font-size:.65rem;font-weight:400;color:#9ca3af">(Slice 4)</small></h3>
-<ul>
-<li><b>Unsharp Masking</b>: g = f + c×(f − f_smooth) เพิ่มความคมชัด โดยบวก edge กลับ</li>
-<li><b>Laplacian Sharpening</b>: g = f − k×∇²f ใช้ 2nd-order derivative เน้นรายละเอียดขอบ ปรับ k ได้</li>
-<li><b>Kirsch Edge</b>: 8 directional masks เลือก max response ตรวจขอบทุกทิศทาง</li>
-</ul>
-</div>
-<div class="help-sec">
-<h3><span class="hbadge">5</span>Frequency Domain <small style="font-size:.65rem;font-weight:400;color:#9ca3af">(Slice 5)</small></h3>
-<ul>
-<li><b>Ideal/Gaussian LP</b>: ลด noise ความถี่สูง (blur)</li>
-<li><b>Ideal/Gaussian HP</b>: เน้นขอบ รายละเอียด</li>
-<li><b>High-Boost</b>: HP + เก็บ base image (k = boost factor)</li>
-<li><b>Band-Pass/Reject</b>: กรอง periodic noise เส้นลาย</li>
-<li>วงกลมสีเหลืองใน Step 3 = cutoff frequency D₀</li>
-</ul>
-</div>
-</div>
-
-<div class="help-row">
-<div class="help-sec">
-<h3><span class="hbadge">6</span>Noise Reduction <small style="font-size:.65rem;font-weight:400;color:#9ca3af">(Slice 4/6)</small></h3>
-<ul>
-<li><b>Gaussian</b>: weighted average ลด Gaussian noise</li>
-<li><b>Median</b>: ดีที่สุดกับ Salt & Pepper, รักษาขอบ</li>
-<li><b>Mean</b>: simple average blur ทั่วไป</li>
-<li><b>Bilateral</b>: edge-preserving filter — เบลอเฉพาะ region เดียวกัน ไม่ข้ามขอบ ปรับ σs (spatial) + σr (range)</li>
-<li><b>Wiener</b>: optimal linear filter ใช้ PSF model ลด blur + noise พร้อมกัน</li>
-</ul>
-</div>
-<div class="help-sec">
-<h3><span class="hbadge">7</span>Segmentation <small style="font-size:.65rem;font-weight:400;color:#9ca3af">(Slice 8)</small></h3>
-<div class="help-row">
-<ul>
-<li><b>Global Threshold</b>: แบ่ง pixel ตาม T คงที่ (iterative method)</li>
-<li><b>Otsu's Auto</b>: หา T อัตโนมัติ maximize between-class variance</li>
-<li><b>Adaptive (Local)</b>: T แตกต่างกันแต่ละ region ตาม mean neighbor − C</li>
-<li><b>Sobel</b>: gradient magnitude Gx²+Gy², เน้นขอบแนวตั้ง/นอน</li>
-<li><b>Prewitt</b>: คล้าย Sobel แต่ kernel ต่างกัน</li>
-<li><b>Roberts</b>: diagonal edge, kernel 2×2 เล็กที่สุด ไว</li>
-</ul>
-<ul>
-<li><b>Kirsch</b>: 8 ทิศทาง ตรวจขอบครบ</li>
-<li><b>Canny</b>: Gaussian→Gradient→NMS→Double-threshold→Hysteresis ขอบแม่นยำสูง</li>
-<li><b>Laplacian Edge (LoG)</b>: 2nd-order derivative เน้นขอบรอบทิศ ไวต่อ noise</li>
-<li><b>Line Detection</b>: mask เฉพาะทิศ (H/V/45°/135°) ตรวจเส้นบาง เช่น trabecula กระดูก</li>
-<li><b>Region Growing</b>: ขยายจาก seed (center pixel) ตาม tolerance ปรับ RG Tolerance 1–80</li>
-<li><b>Watershed</b>: แบ่งตาม gradient landscape คล้ายน้ำไหลลงหุบเขา</li>
-</ul>
-</div>
-</div>
-
-<div class="help-sec">
-<h3><span class="hbadge">8</span>Morphology <small style="font-size:.65rem;font-weight:400;color:#9ca3af">(Slice 7)</small></h3>
-<ul>
-<li><b>Erosion</b>: กัดขอบออก ลดขนาดวัตถุ (ใช้ SE เป็น structuring element)</li>
-<li><b>Dilation</b>: ขยายขอบออก เพิ่มขนาดวัตถุ (ตรงข้าม Erosion)</li>
-<li><b>Opening</b>: Erosion → Dilation ลบ noise เล็กๆ รักษาขนาดวัตถุ</li>
-<li><b>Closing</b>: Dilation → Erosion เติมรูและรอยแตกในวัตถุ รักษาขนาด</li>
-<li><b>Thinning (Skeleton)</b>: Zhang-Suen algorithm ลดโครงสร้างเหลือเส้นกลาง 1-pixel</li>
-<li><b>Thickening</b>: ขยายโครงสร้างบาง = NOT(Thinning(NOT(image))) ตรงข้าม Thinning</li>
-<li>SE Shape: Square / Cross / Circle — Cross เหมาะสำหรับโครงสร้างเส้น, Circle สำหรับ blob กลม</li>
-<li>Iterations: ทำซ้ำหลายรอบเพื่อผลสะสม เช่น Erosion ×3 = กัดขอบลึก 3 ชั้น</li>
-</ul>
-</div>
-
-<div class="help-row">
-<div class="help-sec">
-<h3><span class="hbadge">9</span>Pseudo-Coloring <small style="font-size:.65rem;font-weight:400;color:#9ca3af">(Slice 3)</small></h3>
-<ul>
-<li><b>Hot</b>: black → red → yellow → white เน้น intensity สูง เหมาะกับ thermography</li>
-<li><b>Jet</b>: blue → cyan → green → yellow → red ช่วงกว้าง นิยมใน medical imaging</li>
-<li><b>Bone</b>: blue-gray CT-like เหมาะสังเกต soft tissue ใกล้เคียง grayscale จริง</li>
-<li><b>Viridis</b>: perceptually uniform ปลอดภัยสำหรับ colorblind มองเห็นความต่างเชิงเส้น</li>
-<li>ทำงานเป็น stage สุดท้ายของ pipeline หลัง morphology</li>
-</ul>
-</div>
-<div class="help-sec">
-<h3>🔍 Zoom / 🏷 Annotation / 📏 Ruler / 📈 Profile / Hover</h3>
-<ul>
-<li><b>🔍 Zoom</b>: กดปุ่ม Zoom → คลิก canvas ใด ๆ เพื่อเปิด zoom viewer (scroll ซูม, ลากเพื่อ pan, Compare เปรียบ Original/Processed)</li>
-<li><b>🏷 Label</b>: เปิดโหมด → คลิก canvas → พิมพ์ชื่อ → DICOM-style callout ลาก anchor dot หรือกล่องข้อความ, กด × ลบ</li>
-<li><b>📏 Ruler</b>: คลิก 2 จุด → แสดงระยะ pixel สีเขียว — ลาก endpoint ปรับตำแหน่งได้, render ลง Export</li>
-<li><b>📈 Profile</b>: คลิก 2 จุด → plot กราฟ intensity ตามแนวเส้น (min/max/mean) แสดงที่ panel ล่าง</li>
-<li><b>Hover pixel</b>: เลื่อน mouse บน canvas ใด ๆ → แสดงพิกัด [x,y] และค่า intensity หรือ RGB แบบ real-time</li>
-<li><b>🗑 Clear</b>: ล้าง annotation, measurement และ profile ทั้งหมดในครั้งเดียว</li>
-<li>ทุก overlay บันทึกต่อ tab — สลับ tab แล้วยังอยู่ครบ</li>
-</ul>
-</div>
-</div>
-
-<div class="help-row">
+<!-- Shortcuts -->
 <div class="help-sec">
 <h3>⌨ Keyboard Shortcuts</h3>
 <div class="help-kbds">
 <span class="kbd">Enter</span><span>Apply pipeline</span>
-<span class="kbd">Ctrl+Z / ⌘Z</span><span>Undo</span>
+<span class="kbd">Ctrl+Z</span><span>Undo</span>
 <span class="kbd">Ctrl+S</span><span>Export / Save</span>
 <span class="kbd">Ctrl+T</span><span>New tab</span>
 <span class="kbd">Ctrl+C</span><span>Copy result to clipboard</span>
-<span class="kbd">Ctrl+V</span><span>Paste image from clipboard</span>
-<span class="kbd">Ctrl+1–5</span><span>Switch to tab 1–5</span>
+<span class="kbd">Ctrl+V</span><span>Paste image</span>
+<span class="kbd">Ctrl+1–5</span><span>Switch tab</span>
 <span class="kbd">Esc</span><span>Close zoom / modal</span>
 </div>
-</div>
-<div class="help-sec">
-<h3>💡 Tips & Tricks</h3>
+<h3 style="margin-top:12px">💡 เคล็ดลับ</h3>
 <ul>
-<li><b>ดับเบิลคลิก</b> canvas ซ้าย/ขวา หรือ step canvas เพื่อ zoom — ใน zoom view กด <b>Compare</b> เพื่อดู before/after เคียงกัน</li>
-<li><b>Hover canvas</b> เพื่อดูค่า pixel intensity + พิกัด [x,y] แบบ real-time (แสดงทุก canvas)</li>
-<li>กด <b>📈 Profile</b> แล้วคลิก 2 จุดเพื่อ plot intensity profile ตามแนวเส้น</li>
-<li>ลาก <b>จุดสีเขียว</b> (ruler endpoint) หรือ <b>จุด anchor</b> (annotation) เพื่อย้ายตำแหน่ง</li>
-<li>กด <b>↺</b> หน้าชื่อ section เพื่อ reset เฉพาะ section นั้น · ดับเบิลคลิกชื่อแท็บเพื่อตั้งชื่อ</li>
-<li>▶ Apply = บังคับ run ทันที ใช้เมื่อต้องการ apply หลายค่าพร้อมกัน · ⬆ Export = บันทึกผลลัพธ์พร้อม parameter</li>
-<li>Pipeline เร็วขึ้นเมื่อ parameter ไม่เปลี่ยน — Status bar แสดง "<b>Done Xms (N/8 cached)</b>"</li>
-<li>PSNR badge: เขียว ≥40 dB, น้ำเงิน ≥30 dB, ม่วง &lt;30 dB · μ/σ/min–max คำนวณก่อน colormap</li>
-<li>ภาพขนาดใหญ่จะถูกย่อเหลือ 900×900 อัตโนมัติ เพื่อความเร็ว</li>
+<li>ดับเบิลคลิกชื่อแท็บ = ตั้งชื่อแท็บ · <b>↺</b> หน้า section = reset เฉพาะส่วนนั้น</li>
+<li>Pipeline cache อัตโนมัติ — stage ที่ parameter ไม่เปลี่ยนจะไม่คำนวณซ้ำ</li>
+<li>PSNR badge: 🟢 ≥40 dB · 🔵 ≥30 dB · 🟣 &lt;30 dB</li>
+<li>ภาพใหญ่ถูกย่ออัตโนมัติเป็น 900×900 เพื่อความเร็ว</li>
 </ul>
 </div>
 </div>
 
-<div style="text-align:center;padding-top:12px;border-top:1px solid #ede9fe;color:#9ca3af;font-size:.68rem">
-Medical Image Enhancement · Thammasat University · Radiological Technology
+<!-- Pipeline stages quick-ref -->
+<div class="help-sec" style="margin-top:0">
+<h3>📋 Pipeline Stages — สรุปย่อ</h3>
+<div class="help-row" style="gap:8px">
+<div style="flex:1;min-width:0">
+<ul style="margin:0">
+<li><b>Noise</b>: Gaussian / Salt&amp;Pepper / Poisson / Speckle — จำลอง noise ประเภทต่าง ๆ</li>
+<li><b>Contrast</b>: Brightness · Gamma · HE / AHE / CLAHE — ปรับการกระจาย intensity</li>
+<li><b>Spatial</b>: Unsharp Masking · Laplacian · Kirsch — เพิ่มความคมชัดและตรวจขอบ</li>
+<li><b>FFT</b>: LP / HP / High-Boost / Band-Pass / Reject — กรองใน frequency domain</li>
+</ul>
+</div>
+<div style="flex:1;min-width:0">
+<ul style="margin:0">
+<li><b>Denoise</b>: Gaussian · Median · Mean · Bilateral · Wiener — ลด noise หลังเพิ่ม</li>
+<li><b>Segment</b>: Threshold / Otsu / Adaptive · Sobel / Canny / LoG · Region Growing / Watershed</li>
+<li><b>Morphology</b>: Erosion · Dilation · Opening · Closing · Thinning · Thickening</li>
+<li><b>Pseudo-Color</b>: Hot · Jet · Bone · Viridis — แปลง grayscale เป็นสีเพื่อวิเคราะห์</li>
+</ul>
+</div>
+</div>
+</div>
+
+<div style="text-align:center;padding-top:10px;border-top:1px solid #ede9fe;color:#9ca3af;font-size:.65rem">
+Thammasat University · Radiological Technology · Medical Image Enhancement
 </div>
 </div>
 </div>
@@ -560,8 +482,12 @@ Medical Image Enhancement · Thammasat University · Radiological Technology
 <script>
 var originalImageData=null,currentW=0,currentH=0,noisyCached=null,lastNoiseKey='';
 var undoStack=[];
+// Overlay state (declared early so resetAll can safely reference them)
+var _annotations=[],_measurements=[],_rulerPending=null,_profilePoints=[],_profileLine=[];
 // Pipeline stage cache — avoids recomputing unchanged stages
 var _pc={v:new Array(8).fill(''),d:new Array(8).fill(null)};
+// Independent preview cache — each step canvas shows its stage applied to original only
+var _ip={v:new Array(6).fill(''),d:new Array(6).fill(null)};
 var _imgVer=0; // bumped on each new image load
 function _v(id){return document.getElementById(id).value}
 function _ck(id){return document.getElementById(id).checked?'1':'0'}
@@ -644,6 +570,7 @@ function captureState(){
   if(pc&&currentH>0){s.proc=pc.getContext('2d').getImageData(0,0,pc.width,pc.height);s.procW=pc.width;s.procH=pc.height}
   s.annotations=JSON.parse(JSON.stringify(_annotations));
   s.measurements=JSON.parse(JSON.stringify(_measurements));
+  s.profileLine=JSON.parse(JSON.stringify(_profileLine||[]));
   return s;
 }
 
@@ -678,15 +605,26 @@ function restoreState(s){
       pc.getContext('2d').putImageData(s.proc,0,0);
       drawHist('histProc',s.proc);
       document.getElementById('procInfo').textContent=s.procW+'x'+s.procH;
+      document.getElementById('procPH').style.display='none';
+    } else {
+      pc.getContext('2d').clearRect(0,0,pc.width,pc.height);
+      document.getElementById('procInfo').textContent='—';
+      document.getElementById('procPH').style.display='block';
     }
   } finally {
     _blockPipe=false;
   }
   _annotations=s.annotations?JSON.parse(JSON.stringify(s.annotations)):[];
   _measurements=s.measurements?JSON.parse(JSON.stringify(s.measurements)):[];
+  _profileLine=s.profileLine?JSON.parse(JSON.stringify(s.profileLine)):[];
   renderAnnotations();
 }
 
+function _clearStepCanvases(){
+  ['sc1','sc2','sc3','sc3b','sc4','sc5','sc6'].forEach(function(id){
+    var c=document.getElementById(id);if(c)c.getContext('2d').clearRect(0,0,c.width,c.height);
+  });
+}
 function switchTab(idx){
   if(idx===currentTab)return;
   tabs[currentTab].params=captureState();
@@ -694,8 +632,11 @@ function switchTab(idx){
   renderTabs();
   if(tabs[currentTab].params){restoreState(tabs[currentTab].params);}
   else{resetAll();}
-  _pc.v.fill('');_pc.d.fill(null);_imgVer++;
+  _pc.v.fill('');_pc.d.fill(null);_ip.v.fill('');_ip.d.fill(null);_imgVer++;
   logMsg('Switched to '+tabs[currentTab].name);
+  // Refresh step canvases for restored tab (restoreState doesn't populate them)
+  if(originalImageData){applyPipeline(true);}
+  else{_clearStepCanvases();refreshStepLabels();}
 }
 
 function addTab(){
@@ -705,11 +646,17 @@ function addTab(){
   tabs.push({name:'Tab '+n,color:TAB_COLORS[(n-1)%TAB_COLORS.length],proc:null,procW:0,procH:0,noiseCache:null,noiseKey:'',params:null});
   currentTab=tabs.length-1;
   renderTabs();
-  resetAll();
-  originalImageData=null;currentW=0;currentH=0;noisyCached=null;_pc.v.fill('');_pc.d.fill(null);
-  document.getElementById('origCanvas').getContext('2d').clearRect(0,0,document.getElementById('origCanvas').width,document.getElementById('origCanvas').height);
+  // Clear image data BEFORE resetAll so pipeline doesn't run with stale image
+  originalImageData=null;currentW=0;currentH=0;noisyCached=null;_pc.v.fill('');_pc.d.fill(null);_ip.v.fill('');_ip.d.fill(null);
+  resetAll(); // resets parameters + clears overlays; won't run pipeline (originalImageData is null)
+  // Explicitly blank all display canvases
+  var oc=document.getElementById('origCanvas');oc.getContext('2d').clearRect(0,0,oc.width,oc.height);
   document.getElementById('origInfo').textContent='—';
   document.getElementById('origPH').style.display='block';
+  var pc=document.getElementById('procCanvas');pc.getContext('2d').clearRect(0,0,pc.width,pc.height);
+  document.getElementById('procInfo').textContent='—';
+  document.getElementById('procPH').style.display='block';
+  ['sc1','sc2','sc3','sc3b','sc4','sc5','sc6'].forEach(function(id){var c=document.getElementById(id);if(c)c.getContext('2d').clearRect(0,0,c.width,c.height);});
   logMsg('New '+tabs[currentTab].name+' created');
 }
 
@@ -720,6 +667,9 @@ function removeTab(idx){
   renderTabs();
   if(tabs[currentTab].params)restoreState(tabs[currentTab].params);
   else resetAll();
+  _pc.v.fill('');_pc.d.fill(null);_ip.v.fill('');_ip.d.fill(null);_imgVer++;
+  if(originalImageData){applyPipeline(true);}
+  else{_clearStepCanvases();refreshStepLabels();}
 }
 
 function startRenameTab(idx,lblEl){
@@ -842,7 +792,7 @@ function loadImage(file){
       var w=img.width,h=img.height,M=900;
       if(w>M||h>M){var r=Math.min(M/w,M/h);w=Math.round(w*r);h=Math.round(h*r)}
       currentW=w;currentH=h;noisyCached=null;
-      _imgVer++;_pc.v.fill('');_pc.d.fill(null); // invalidate all stage caches
+      _imgVer++;_pc.v.fill('');_pc.d.fill(null);_ip.v.fill('');_ip.d.fill(null); // invalidate all stage caches
       var c=document.getElementById('origCanvas');c.width=w;c.height=h;
       var ctx=c.getContext('2d');ctx.drawImage(img,0,0,w,h);
       originalImageData=ctx.getImageData(0,0,w,h);
@@ -1365,14 +1315,172 @@ function applyColormap(img,name){
   }
 }
 
+// === INDEPENDENT STEP PREVIEWS ===
+// Each step canvas (sc1-sc6) shows its stage applied directly to the original image,
+// independently of all other stages. Lets students compare each filter in isolation.
+function drawIndependentPreviews(){
+  if(!originalImageData)return;
+  var base;
+
+  // ── Preview 1: Noise ──────────────────────────────
+  var nt=_v('noiseType'),gs=+_v('gaussianSigma'),spd=+_v('spDensity')/100;
+  var psc=+_v('poissonScale'),spkSig=+_v('speckleSigma')/100;
+  var ik0=_imgVer+'|n:'+nt+'|'+gs+'|'+spd+'|'+psc+'|'+spkSig;
+  if(_ip.v[0]!==ik0){
+    base=cloneID(originalImageData);toGray(base);
+    if(nt!=='none'){
+      var npk=nt+'|'+gs+'|'+spd+'|'+psc+'|'+spkSig;
+      if(noisyCached&&lastNoiseKey===npk){base=cloneID(noisyCached);}
+      else{
+        if(nt==='gaussian')addGaussianNoise(base,gs);
+        else if(nt==='saltpepper')addSaltPepperNoise(base,spd);
+        else if(nt==='poisson')addPoissonNoise(base,psc);
+        else if(nt==='speckle')addSpeckleNoise(base,spkSig);
+      }
+    }
+    _ip.v[0]=ik0;_ip.d[0]=cloneID(base);
+  }
+  drawStep('sc1',_ip.d[0]);
+
+  // ── Preview 2: Contrast / Histogram ──────────────
+  var br=+_v('brightness'),co=+_v('contrast'),ga=+_v('gamma')/100;
+  var ik1=_imgVer+'|c:'+br+'|'+co+'|'+ga+'|'+_ck('histEq')+'|'+_ck('aheEq')+'|'+_ck('claheEq')+'|'+_v('claheLimit');
+  if(_ip.v[1]!==ik1){
+    base=cloneID(originalImageData);toGray(base);
+    if(br||co)applyBC(base,br,co);
+    if(ga!==1)applyGamma(base,ga);
+    if(document.getElementById('histEq').checked)histEq(base);
+    else if(document.getElementById('aheEq').checked)ahe(base);
+    else if(document.getElementById('claheEq').checked)clahe(base,+_v('claheLimit'));
+    _ip.v[1]=ik1;_ip.d[1]=cloneID(base);
+  }
+  drawStep('sc2',_ip.d[1]);
+
+  // ── Preview 3: Spatial + FFT ──────────────────────
+  var sm2=_v('spatialMethod');
+  var ff=_v('fftFilter'),cutoff=+_v('fftCutoff'),bw=+_v('bandWidth'),kk=+_v('highBoostK')/10;
+  var ik2=_imgVer+'|sp:'+sm2+'|'+_v('unsharpC')+'|'+_v('unsharpSig')+'|'+_v('lapK')+'|fft:'+ff+'|'+cutoff+'|'+bw+'|'+kk;
+  if(_ip.v[2]!==ik2){
+    base=cloneID(originalImageData);toGray(base);
+    if(sm2==='unsharp')unsharpMask(base,+_v('unsharpC')/10,+_v('unsharpSig')/10);
+    else if(sm2==='kirsch')kirschEdge(base);
+    else if(sm2==='laplacian')laplacianSharpen(base,+_v('lapK')/10);
+    if(ff!=='none'){
+      var padW=Math.min(nextPow2(base.width),1024),padH=Math.min(nextPow2(base.height),1024);
+      var re=new Float64Array(padW*padH),im_a=new Float64Array(padW*padH);
+      for(var y=0;y<base.height;y++)for(var x=0;x<base.width;x++)re[y*padW+x]=base.data[(y*base.width+x)*4];
+      fft2d(re,im_a,padW,padH,false);
+      drawSpectrum('sc3',re,im_a,padW,padH,cutoff);
+      fftShift(re,im_a,padW,padH);
+      for(var y=0;y<padH;y++)for(var x=0;x<padW;x++){
+        var cy2=y-padH/2,cx2=x-padW/2,dist=Math.sqrt(cx2*cx2+cy2*cy2),hf=1;
+        if(ff==='ideal_lp')hf=dist<=cutoff?1:0;
+        else if(ff==='ideal_hp')hf=dist>cutoff?1:0;
+        else if(ff==='gaussian_lp')hf=Math.exp(-(dist*dist)/(2*cutoff*cutoff));
+        else if(ff==='gaussian_hp')hf=1-Math.exp(-(dist*dist)/(2*cutoff*cutoff));
+        else if(ff==='highboost'){var ihp=1-Math.exp(-(dist*dist)/(2*cutoff*cutoff));hf=1+kk*ihp}
+        else if(ff==='bandpass')hf=(dist>=cutoff-bw/2&&dist<=cutoff+bw/2)?1:0;
+        else if(ff==='bandreject')hf=(dist<cutoff-bw/2||dist>cutoff+bw/2)?1:0;
+        re[y*padW+x]*=hf;im_a[y*padW+x]*=hf;
+      }
+      drawSpectrum('sc3b',re,im_a,padW,padH,0);
+      fftShift(re,im_a,padW,padH);
+      fft2d(re,im_a,padW,padH,true);
+      for(var y=0;y<base.height;y++)for(var x=0;x<base.width;x++){
+        var v=Math.max(0,Math.min(255,Math.round(re[y*padW+x])));
+        var idx=(y*base.width+x)*4;base.data[idx]=base.data[idx+1]=base.data[idx+2]=v;
+      }
+      _ip.v[2]=ik2;_ip.d[2]=cloneID(base);
+      // sc3/sc3b already drawn via drawSpectrum above
+    } else {
+      var s3b=document.getElementById('sc3b');
+      if(s3b)s3b.getContext('2d').clearRect(0,0,s3b.width,s3b.height);
+      _ip.v[2]=ik2;_ip.d[2]=cloneID(base);
+      drawStep('sc3',base);
+    }
+  } else {
+    // Cache hit — sc3/sc3b retain correct content; only need explicit redraw for non-FFT
+    if(ff==='none')drawStep('sc3',_ip.d[2]);
+  }
+
+  // ── Preview 4: Denoise ────────────────────────────
+  var df=_v('denoiseFilter'),ks=+_v('kernelSize');
+  var ik3=_imgVer+'|dn:'+df+'|'+ks+'|'+_v('sigmaDen')+'|'+_v('psfSigma')+'|'+_v('wienerK')+'|'+_v('bilSs')+'|'+_v('bilSr');
+  if(_ip.v[3]!==ik3){
+    base=cloneID(originalImageData);toGray(base);
+    if(df==='gaussian')conv(base,gKernel(ks,+_v('sigmaDen')/10));
+    else if(df==='median')medFilt(base,ks);
+    else if(df==='mean')meanFilt(base,ks);
+    else if(df==='bilateral')bilateralFilter(base,+_v('bilSs'),+_v('bilSr'));
+    else if(df==='wiener'){
+      var psfSig=+_v('psfSigma')/10,wk=+_v('wienerK')/1000;
+      var pw2=Math.min(nextPow2(base.width),1024),ph2=Math.min(nextPow2(base.height),1024);
+      var gR=new Float64Array(pw2*ph2),gI=new Float64Array(pw2*ph2);
+      var hR=new Float64Array(pw2*ph2),hI=new Float64Array(pw2*ph2);
+      for(var yy=0;yy<base.height;yy++)for(var xx=0;xx<base.width;xx++)gR[yy*pw2+xx]=base.data[(yy*base.width+xx)*4];
+      var sig2=2*psfSig*psfSig;
+      for(var yy=0;yy<ph2;yy++)for(var xx=0;xx<pw2;xx++){var dy2=yy<ph2/2?yy:yy-ph2,dx2=xx<pw2/2?xx:xx-pw2;hR[yy*pw2+xx]=Math.exp(-(dx2*dx2+dy2*dy2)/sig2)}
+      fft2d(gR,gI,pw2,ph2,false);fft2d(hR,hI,pw2,ph2,false);
+      for(var ii=0;ii<pw2*ph2;ii++){var hm2=hR[ii]*hR[ii]+hI[ii]*hI[ii],dnd=hm2+wk;var fRi=(hR[ii]*gR[ii]+hI[ii]*gI[ii])/dnd,fIi=(hR[ii]*gI[ii]-hI[ii]*gR[ii])/dnd;gR[ii]=fRi;gI[ii]=fIi}
+      fft2d(gR,gI,pw2,ph2,true);
+      for(var yy=0;yy<base.height;yy++)for(var xx=0;xx<base.width;xx++){var vv=Math.max(0,Math.min(255,Math.round(gR[yy*pw2+xx])));var id2=(yy*base.width+xx)*4;base.data[id2]=base.data[id2+1]=base.data[id2+2]=vv}
+    }
+    _ip.v[3]=ik3;_ip.d[3]=cloneID(base);
+  }
+  drawStep('sc4',_ip.d[3]);
+
+  // ── Preview 5: Segmentation ───────────────────────
+  var sm=_v('segMethod'),tv=+_v('threshold'),inv=document.getElementById('invertBin').checked;
+  var ik4=_imgVer+'|seg:'+sm+'|'+tv+'|'+_ck('invertBin')+'|'+_v('cannyLow')+'|'+_v('cannyHigh')+'|'+_v('lineAngle')+'|'+_v('rgTol');
+  if(_ip.v[4]!==ik4){
+    base=cloneID(originalImageData);toGray(base);
+    if(sm==='threshold')gThresh(base,tv,inv);
+    else if(sm==='otsu')otsuThresh(base,inv);
+    else if(sm==='adaptive')adaptThresh(base,tv/10,inv);
+    else if(sm==='sobel')sobelEdge(base);
+    else if(sm==='prewitt')prewittEdge(base);
+    else if(sm==='roberts')robertsEdge(base);
+    else if(sm==='kirsch')kirschEdge(base);
+    else if(sm==='canny')cannyEdge(base,+_v('cannyLow'),+_v('cannyHigh'));
+    else if(sm==='laplacian')laplacianEdge(base);
+    else if(sm==='linedetect')lineDetect(base,_v('lineAngle'));
+    else if(sm==='regiongrow')regionGrow(base,+_v('rgTol'));
+    else if(sm==='watershed')watershedSeg(base);
+    _ip.v[4]=ik4;_ip.d[4]=cloneID(base);
+  }
+  drawStep('sc5',_ip.d[4]);
+
+  // ── Preview 6: Morphology ─────────────────────────
+  var mo=_v('morphOp'),seS=_v('seShape'),seZ=+_v('seSize'),mI=+_v('morphIter');
+  var ik5=_imgVer+'|mo:'+mo+'|'+seS+'|'+seZ+'|'+mI;
+  if(_ip.v[5]!==ik5){
+    base=cloneID(originalImageData);toGray(base);
+    if(mo!=='none'){
+      var se=createSE(seS,seZ);
+      if(mo==='erosion'||mo==='dilation'||mo==='opening'||mo==='closing'){
+        for(var ii=0;ii<mI;ii++){
+          if(mo==='erosion')erode(base,se);
+          else if(mo==='dilation')dilate(base,se);
+          else if(mo==='opening'){erode(base,se);dilate(base,se)}
+          else if(mo==='closing'){dilate(base,se);erode(base,se)}
+        }
+      }
+      else if(mo==='thinning'){for(var ii=0;ii<mI;ii++)thinning(base)}
+      else if(mo==='thickening'){for(var ii=0;ii<mI;ii++)thickening(base)}
+    }
+    _ip.v[5]=ik5;_ip.d[5]=cloneID(base);
+  }
+  drawStep('sc6',_ip.d[5]);
+}
+
 // === MAIN PIPELINE (with per-stage cache) ===
 // Each stage stores its output + a key of all inputs.
 // If key unchanged, that stage is skipped — only recompute what changed.
-function applyPipeline(){
+function applyPipeline(noUndo){
   if(!originalImageData||_blockPipe)return;
   var pc=document.getElementById('procCanvas');
-  // Undo snapshot — only when a real image is loaded
-  if(currentH>0){
+  // Undo snapshot — skip on silent refresh (tab switch) to avoid polluting undo stack
+  if(!noUndo&&currentH>0){
     undoStack.push(pc.getContext('2d').getImageData(0,0,pc.width,pc.height));
     var ub=document.getElementById('btnUndo');ub.disabled=false;ub.style.opacity='1';
   }
@@ -1389,11 +1497,17 @@ function applyPipeline(){
   else{
     img=cloneID(originalImageData);toGray(img);
     if(nt!=='none'){
-      if(nt==='gaussian')addGaussianNoise(img,gs);
-      else if(nt==='saltpepper')addSaltPepperNoise(img,spd);
-      else if(nt==='poisson')addPoissonNoise(img,psc);
-      else if(nt==='speckle')addSpeckleNoise(img,spkSig);
-      noisyCached=cloneID(img);lastNoiseKey=nt+'|'+gs+'|'+spd+'|'+psc+'|'+spkSig;
+      // If noise params match saved cache, reuse it (preserves noise pattern across tab switches)
+      var noiseParamKey=nt+'|'+gs+'|'+spd+'|'+psc+'|'+spkSig;
+      if(noisyCached&&lastNoiseKey===noiseParamKey){
+        img=cloneID(noisyCached);
+      }else{
+        if(nt==='gaussian')addGaussianNoise(img,gs);
+        else if(nt==='saltpepper')addSaltPepperNoise(img,spd);
+        else if(nt==='poisson')addPoissonNoise(img,psc);
+        else if(nt==='speckle')addSpeckleNoise(img,spkSig);
+        noisyCached=cloneID(img);lastNoiseKey=noiseParamKey;
+      }
     }else{noisyCached=null;lastNoiseKey=''}
     _pc.v[0]=k0;_pc.d[0]=cloneID(img);
   }
@@ -1430,7 +1544,7 @@ function applyPipeline(){
   hlStep(5);
   var ff=_v('fftFilter'),cutoff=+_v('fftCutoff'),bw=+_v('bandWidth'),kk=+_v('highBoostK')/10;
   var k3=k2+'|fft:'+ff+'|'+cutoff+'|'+bw+'|'+kk;
-  if(_pc.v[3]===k3&&_pc.d[3]){img=cloneID(_pc.d[3]);if(ff==='none')drawStep('sc3',img);skipped++}
+  if(_pc.v[3]===k3&&_pc.d[3]){img=cloneID(_pc.d[3]);if(ff==='none'){drawStep('sc3',img);var _s3b=document.getElementById('sc3b');if(_s3b)_s3b.getContext('2d').clearRect(0,0,_s3b.width,_s3b.height);}skipped++}
   else{
     if(ff!=='none'){
       var padW=Math.min(nextPow2(img.width),1024),padH=Math.min(nextPow2(img.height),1024);
@@ -1554,16 +1668,52 @@ function applyPipeline(){
   drawHist('histProc',histSrc);
   updatePSNR(histSrc);
   updateImageStats(histSrc);
-  // Refresh step canvases from per-stage cache so each shows its own intermediate result
-  if(_pc.d[0])drawStep('sc1',_pc.d[0]);
-  if(_pc.d[1])drawStep('sc2',_pc.d[1]);
-  // sc3/sc3b: spectrum drawn in FFT branch when ff!='none'; fallback: show pre-FFT spatial result
-  if(ff==='none'&&_pc.d[2])drawStep('sc3',_pc.d[2]);
-  if(_pc.d[4])drawStep('sc4',_pc.d[4]);
-  if(_pc.d[5])drawStep('sc5',_pc.d[5]);
-  if(_pc.d[6])drawStep('sc6',_pc.d[6]);
+  // Draw independent previews — each step canvas shows its stage on original image
+  drawIndependentPreviews();
   var ms=(performance.now()-t0).toFixed(1);
   logMsg('Done '+ms+'ms ('+skipped+'/8 cached) | '+[nt,sm2,ff,df,sm,mo,cm].filter(function(x){return x&&x!=='none'}).join(' › ')||'no processing');
+  refreshStepLabels();
+}
+
+// === STEP LABEL / ACTIVE STATE INDICATOR ===
+function refreshStepLabels(){
+  function _setStep(n,active,tag){
+    var si=document.getElementById('stitem'+n);
+    var sl=document.getElementById('slbl'+n);
+    if(!si||!sl)return;
+    var base=['1. Noise','2. Contrast','3. Spatial / FFT','4. Denoise','5. Segment','6. Morph'][n-1];
+    si.classList.toggle('s-on',!!active);
+    si.classList.toggle('s-off',!active);
+    sl.textContent=(active&&tag)?base+' — '+tag:base;
+  }
+  // Step 1: Noise
+  var nt=document.getElementById('noiseType').value;
+  _setStep(1,nt!=='none',nt);
+  // Step 2: Contrast / Histogram
+  var br=+document.getElementById('brightness').value;
+  var co=+document.getElementById('contrast').value;
+  var ga=+document.getElementById('gamma').value;
+  var he=document.getElementById('histEq').checked;
+  var ae=document.getElementById('aheEq').checked;
+  var ce=document.getElementById('claheEq').checked;
+  var c2active=br!==0||co!==0||ga!==100||he||ae||ce;
+  var c2tag=he?'HE':ae?'AHE':ce?'CLAHE':(br!==0||co!==0||ga!==100)?'B/C/γ':null;
+  _setStep(2,c2active,c2tag);
+  // Step 3: Spatial / FFT
+  var sm2=document.getElementById('spatialMethod').value;
+  var ff=document.getElementById('fftFilter').value;
+  var s3active=sm2!=='none'||ff!=='none';
+  var s3tag=sm2!=='none'&&ff!=='none'?sm2+'+'+ff:sm2!=='none'?sm2:ff!=='none'?ff:null;
+  _setStep(3,s3active,s3tag);
+  // Step 4: Denoise
+  var df=document.getElementById('denoiseFilter').value;
+  _setStep(4,df!=='none',df);
+  // Step 5: Segment
+  var sm=document.getElementById('segMethod').value;
+  _setStep(5,sm!=='none',sm);
+  // Step 6: Morphology
+  var mo=document.getElementById('morphOp').value;
+  _setStep(6,mo!=='none',mo);
 }
 
 // === UNDO ===
@@ -1636,45 +1786,44 @@ function exportWithParams(){
   ctx.drawImage(pc,0,0);
   // Render DICOM-style callout annotations onto exported image
   _annotations.filter(function(a){return a.canvasId==='procCanvas'}).forEach(function(a){
+    var col=a.color||'#00e5ff';
     var ax=a.px*pc.width, ay=a.py*pc.height;
     var txOff=a.txOff!=null?a.txOff:65, tyOff=a.tyOff!=null?a.tyOff:-42;
     var tx=ax+txOff, ty=ay+tyOff;
     ctx.save();
     ctx.font='10.5px monospace';
     var tw=ctx.measureText(a.text).width;
-    var pad=8,delW=14,textW=tw+pad*2+delW,textH=18;
+    var pad=8,textW=tw+pad*2+26,textH=18;
     var rx=tx-textW/2, ry=ty-textH/2;
-    // Dashed callout line
-    ctx.strokeStyle='#00e5ff'; ctx.lineWidth=1; ctx.setLineDash([4,3]); ctx.globalAlpha=0.85;
+    ctx.strokeStyle=col; ctx.lineWidth=1; ctx.setLineDash([4,3]); ctx.globalAlpha=0.85;
     ctx.beginPath(); ctx.moveTo(ax,ay); ctx.lineTo(tx,ty); ctx.stroke();
     ctx.setLineDash([]); ctx.globalAlpha=1;
-    // Crosshair
-    ctx.lineWidth=1.5; ctx.strokeStyle='#00e5ff';
-    ctx.beginPath(); ctx.arc(ax,ay,3.5,0,Math.PI*2); ctx.stroke();
+    ctx.lineWidth=1.5; ctx.strokeStyle=col;
+    var ar=a.r||5;
+    ctx.beginPath(); ctx.arc(ax,ay,ar,0,Math.PI*2); ctx.stroke();
     ctx.lineWidth=1;
     ctx.beginPath(); ctx.moveTo(ax-7,ay); ctx.lineTo(ax+7,ay); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(ax,ay-7); ctx.lineTo(ax,ay+7); ctx.stroke();
-    // Text box
     ctx.fillStyle='rgba(0,0,0,0.78)';
-    ctx.strokeStyle='#00e5ff'; ctx.lineWidth=0.8;
+    ctx.strokeStyle=col; ctx.lineWidth=0.8;
     ctx.beginPath(); ctx.roundRect(rx,ry,textW,textH,2); ctx.fill(); ctx.stroke();
     ctx.fillStyle='#e0f2fe';
     ctx.fillText(a.text, rx+pad, ry+12.5);
     ctx.restore();
   });
-  // Render measurements
   _measurements.filter(function(m){return m.canvasId==='procCanvas';}).forEach(function(m){
+    var col=m.color||'#a3e635';
     var ax=m.ax*pc.width,ay=m.ay*pc.height,bx=m.bx*pc.width,by=m.by*pc.height;
     var mx=(ax+bx)/2,my=(ay+by)/2;
     ctx.save();
-    ctx.strokeStyle='#a3e635';ctx.fillStyle='#a3e635';ctx.lineWidth=1.5;
+    ctx.strokeStyle=col;ctx.fillStyle=col;ctx.lineWidth=1.5;
     ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(bx,by);ctx.stroke();
     ctx.beginPath();ctx.arc(ax,ay,3,0,Math.PI*2);ctx.fill();
     ctx.beginPath();ctx.arc(bx,by,3,0,Math.PI*2);ctx.fill();
     ctx.font='10px monospace';
     var label=Math.round(m.pxDist)+' px';
     var tw2=ctx.measureText(label).width+16;
-    ctx.fillStyle='rgba(0,0,0,0.75)';ctx.strokeStyle='#a3e635';ctx.lineWidth=0.8;
+    ctx.fillStyle='rgba(0,0,0,0.75)';ctx.strokeStyle=col;ctx.lineWidth=0.8;
     ctx.beginPath();ctx.roundRect(mx-tw2/2,my-8,tw2,16,3);ctx.fill();ctx.stroke();
     ctx.fillStyle='#ecfccb';ctx.textAlign='center';ctx.fillText(label,mx,my+4);
     ctx.restore();
@@ -1824,6 +1973,10 @@ function resetAll(){
   document.getElementById('psnrBadge').style.display='none';
   logMsg('Reset all parameters');
   noisyCached=null;
+  // Clear overlays
+  _annotations=[];_measurements=[];_rulerPending=null;_profilePoints=[];_profileLine=[];
+  renderAnnotations();
+  refreshStepLabels();
   if(originalImageData)applyPipeline();
 }
 
@@ -1954,63 +2107,34 @@ window.addEventListener('mouseup',function(){zoom.dragging=false;zoomOverlay.cla
 
 document.addEventListener('keydown',function(e){if(e.key==='Escape')closeZoom()});
 
-var _zoomMode=false;
-var _zoomTitles={};
-var _zoomHandlers={};
-var _zoomCanvasIds=['origCanvas','procCanvas','sc1','sc2','sc3','sc3b','sc4','sc5','sc6'];
+// === ZOOM — dblclick on any canvas opens zoom viewer ===
+var _zoomMode=false; // legacy flag kept so mode checks still work
+var _zoomTitles={
+  origCanvas:'Original', procCanvas:'Processed',
+  sc1:'Step 1: Noise', sc2:'Step 2: Contrast',
+  sc3:'Step 3: FFT (Pre-filter)', sc3b:'Step 3: FFT (Post-filter)',
+  sc4:'Step 4: Denoise', sc5:'Step 5: Segment', sc6:'Step 6: Morphology'
+};
 
-function _attachZoomClick(id){
-  var el=document.getElementById(id);
-  if(!el)return;
-  // ถ้ามี handler เก่าอยู่แล้วให้ถอดออกก่อน
-  if(_zoomHandlers[id]){el.removeEventListener('click',_zoomHandlers[id]);}
-  _zoomHandlers[id]=function(e){
-    e.stopPropagation();
-    openZoom(id,_zoomTitles[id]||id);
-  };
-  el.addEventListener('click',_zoomHandlers[id]);
-}
-function _detachZoomClick(id){
-  var el=document.getElementById(id);
-  if(el&&_zoomHandlers[id]){el.removeEventListener('click',_zoomHandlers[id]);}
-  delete _zoomHandlers[id];
-}
-
+// Zoom button = open processed canvas zoom directly (no mode toggle)
 function toggleZoomMode(){
-  _zoomMode=!_zoomMode;
-  if(_zoomMode){
-    // ปิดโหมดอื่นก่อน
-    if(typeof _labelMode!=='undefined'&&_labelMode)toggleLabelMode();
-    if(typeof _rulerMode!=='undefined'&&_rulerMode)toggleRulerMode();
-    if(typeof _profileMode!=='undefined'&&_profileMode)toggleProfileMode();
-    // attach click handlers
-    _zoomCanvasIds.forEach(_attachZoomClick);
-  } else {
-    // detach click handlers
-    _zoomCanvasIds.forEach(_detachZoomClick);
-  }
-  var btn=document.getElementById('btnZoom');
-  btn.style.background=_zoomMode?'#4c1d95':'';
-  btn.style.color=_zoomMode?'#ede9fe':'';
-  btn.textContent=_zoomMode?'🔍 Done':'🔍 Zoom';
-  _zoomCanvasIds.forEach(function(id){
-    var c=document.getElementById(id);
-    if(c)c.style.cursor=_zoomMode?'zoom-in':'default';
-  });
-}
-function makeZoomable(canvasId,title){
-  // เก็บ title ไว้ใช้เมื่อ zoom mode เปิด
-  _zoomTitles[canvasId]=title;
+  openZoom('procCanvas','Processed');
 }
 
-makeZoomable('origCanvas','Original');
-makeZoomable('procCanvas','Processed');
-makeZoomable('sc1','Step 1: Add Noise');
-makeZoomable('sc2','Step 2: Contrast');
-makeZoomable('sc3','Step 3: Frequency Domain');
-makeZoomable('sc4','Step 4: Noise Reduction');
-makeZoomable('sc5','Step 5: Segmentation');
-makeZoomable('sc6','Step 6: Morphology');
+// dblclick on any canvas opens zoom for that canvas
+(function(){
+  Object.keys(_zoomTitles).forEach(function(cid){
+    var el=document.getElementById(cid);
+    if(!el)return;
+    el.setAttribute('data-zoomable','1');
+    el.addEventListener('dblclick',function(e){
+      e.stopPropagation();e.preventDefault();
+      // Don't open zoom if another tool mode is active (user may be placing points)
+      if(_labelMode||_rulerMode||_profileMode)return;
+      openZoom(cid,_zoomTitles[cid]);
+    });
+  });
+})();
 
 // === KEYBOARD SHORTCUTS ===
 document.addEventListener('keydown',function(e){
@@ -2057,11 +2181,11 @@ document.getElementById('procCanvas').addEventListener('drop',function(e){
 
 // === ANNOTATION / LABEL TOOL ===
 var _labelMode=false;
-var _annotations=[]; // {id,canvasId,px,py,text} — px/py as fraction 0-1
+// _annotations declared at top of script
 
 function toggleLabelMode(){
   _labelMode=!_labelMode;
-  if(_labelMode&&_zoomMode)toggleZoomMode();
+  // (zoom no longer has a mode to deactivate)
   var btn=document.getElementById('btnLabel');
   btn.style.background=_labelMode?'#0e7490':'';
   btn.style.color=_labelMode?'#e0f2fe':'';
@@ -2099,6 +2223,15 @@ function _svgEl(tag,attrs){
   return el;
 }
 
+// Color presets for annotations & measurements
+var _ANNO_COLORS=['#00e5ff','#fbbf24','#4ade80','#f87171','#a78bfa','#f472b6','#ffffff'];
+var _MEAS_COLORS=['#a3e635','#fbbf24','#00e5ff','#f87171','#a78bfa','#ffffff'];
+
+function _nextColor(color,palette){
+  var i=palette.indexOf(color);
+  return palette[(i+1)%palette.length];
+}
+
 function renderAnnotations(){
   ['annoOrig','annoProc'].forEach(function(ovId){
     var ov=document.getElementById(ovId);
@@ -2107,22 +2240,24 @@ function renderAnnotations(){
     var cid=ovId==='annoOrig'?'origCanvas':'procCanvas';
     var c=document.getElementById(cid);
     var cw=c.offsetWidth||c.clientWidth||1,ch=c.offsetHeight||c.clientHeight||1;
-    // Calculate canvas offset within the overlay (canvas is flex-centered in cwrap)
     var offX=0,offY=0;
-    try{var cRect=c.getBoundingClientRect(),ovRect=ov.getBoundingClientRect();offX=cRect.left-ovRect.left;offY=cRect.top-ovRect.top;}catch(e){}
+    try{var cRect=c.getBoundingClientRect(),ovRect=ov.getBoundingClientRect();offX=cRect.left-ovRect.left;offY=cRect.top-ovRect.top;}catch(ex){}
     var svg=_svgEl('svg',{width:'100%',height:'100%'});
     svg.style.overflow='visible';
-    // Render measurements
+
+    // ── Ruler measurements ──
     _measurements.filter(function(m){return m.canvasId===cid;}).forEach(function(m){
+      if(!m.color)m.color='#a3e635';
+      var col=m.color;
       var ax=m.ax*cw+offX,ay=m.ay*ch+offY,bx=m.bx*cw+offX,by=m.by*ch+offY;
       var mx=(ax+bx)/2,my=(ay+by)/2;
       var gm=document.createElementNS(NS,'g');
-      var ln=_svgEl('line',{x1:ax,y1:ay,x2:bx,y2:by,stroke:'#a3e635','stroke-width':'1.5'});
-      var dA=_svgEl('circle',{cx:ax,cy:ay,r:'5',fill:'rgba(163,230,53,0.25)',stroke:'#a3e635','stroke-width':'1.5'});
-      dA.style.cursor='move'; dA.style.pointerEvents='all';
-      var dB=_svgEl('circle',{cx:bx,cy:by,r:'5',fill:'rgba(163,230,53,0.25)',stroke:'#a3e635','stroke-width':'1.5'});
-      dB.style.cursor='move'; dB.style.pointerEvents='all';
-      // Draggable endpoints for ruler (uses global drag manager — no stacking)
+      gm.style.pointerEvents='all';
+      var ln=_svgEl('line',{x1:ax,y1:ay,x2:bx,y2:by,stroke:col,'stroke-width':'1.5'});
+      var dA=_svgEl('circle',{cx:ax,cy:ay,r:'5',fill:'rgba(163,230,53,0.2)',stroke:col,'stroke-width':'1.5'});
+      dA.style.cursor='move';dA.style.pointerEvents='all';
+      var dB=_svgEl('circle',{cx:bx,cy:by,r:'5',fill:'rgba(163,230,53,0.2)',stroke:col,'stroke-width':'1.5'});
+      dB.style.cursor='move';dB.style.pointerEvents='all';
       (function(meas,eA,eB){
         function makeDragEndpoint(dot,isA){
           dot.addEventListener('mousedown',function(e){
@@ -2139,90 +2274,149 @@ function renderAnnotations(){
             });
           });
         }
-        makeDragEndpoint(eA,true); makeDragEndpoint(eB,false);
+        makeDragEndpoint(eA,true);makeDragEndpoint(eB,false);
       })(m,dA,dB);
       var label=Math.round(m.pxDist)+' px';
-      var tw2=label.length*6+16;
-      var bg=_svgEl('rect',{x:mx-tw2/2,y:my-9,width:tw2,height:16,rx:'3',fill:'rgba(0,0,0,0.75)',stroke:'#a3e635','stroke-width':'0.8'});
-      var tx2=_svgEl('text',{x:mx,y:my+4,'text-anchor':'middle','font-family':'monospace','font-size':'10',fill:'#ecfccb'});
-      tx2.textContent=label; tx2.style.pointerEvents='none';
-      var delM=_svgEl('text',{x:mx+tw2/2+8,y:my+4,'font-size':'12',fill:'#f87171','font-weight':'bold','text-anchor':'middle'});
-      delM.textContent='\u00d7'; delM.style.cursor='pointer'; delM.style.pointerEvents='all';
+      var tw2=label.length*6+32; // extra room for color swatch
+      var bg=_svgEl('rect',{x:mx-tw2/2,y:my-9,width:tw2,height:16,rx:'3',fill:'rgba(0,0,0,0.75)',stroke:col,'stroke-width':'0.8'});
+      bg.style.cursor='pointer';bg.style.pointerEvents='all';
+      var tx2=_svgEl('text',{x:mx-4,y:my+4,'text-anchor':'middle','font-family':'monospace','font-size':'10',fill:'#ecfccb'});
+      tx2.textContent=label;tx2.style.pointerEvents='none';
+      // Color swatch (click to cycle)
+      var sw=_svgEl('rect',{x:mx+tw2/2-22,y:my-7,width:10,height:12,rx:'2',fill:col});
+      sw.style.cursor='pointer';sw.style.pointerEvents='all';
+      (function(meas){sw.onclick=function(e){e.stopPropagation();meas.color=_nextColor(meas.color,_MEAS_COLORS);renderAnnotations();};})(m);
+      // Delete ×
+      var delM=_svgEl('text',{x:mx+tw2/2-4,y:my+4,'font-size':'12',fill:'#f87171','font-weight':'bold','text-anchor':'middle'});
+      delM.textContent='\u00d7';delM.style.cursor='pointer';delM.style.pointerEvents='all';
       (function(mid){delM.onclick=function(e){e.stopPropagation();_measurements=_measurements.filter(function(x){return x.id!==mid;});renderAnnotations();};})(m.id);
-      gm.appendChild(ln);gm.appendChild(dA);gm.appendChild(dB);gm.appendChild(bg);gm.appendChild(tx2);gm.appendChild(delM);
+      // Right-click on group = delete
+      (function(mid){gm.addEventListener('contextmenu',function(e){e.preventDefault();e.stopPropagation();_measurements=_measurements.filter(function(x){return x.id!==mid;});renderAnnotations();});})(m.id);
+      gm.appendChild(ln);gm.appendChild(dA);gm.appendChild(dB);gm.appendChild(bg);gm.appendChild(tx2);gm.appendChild(sw);gm.appendChild(delM);
       svg.appendChild(gm);
     });
-    // Render pending profile first point
+
+    // ── Completed profile line (stays visible) ──
+    if(_profileLine&&_profileLine.length===2&&_profileLine[0].canvasId===cid){
+      var pl0=_profileLine[0],pl1=_profileLine[1];
+      var plx0=pl0.px*cw+offX,ply0=pl0.py*ch+offY,plx1=pl1.px*cw+offX,ply1=pl1.py*ch+offY;
+      var gpl=document.createElementNS(NS,'g');
+      gpl.appendChild(_svgEl('line',{x1:plx0,y1:ply0,x2:plx1,y2:ply1,stroke:'#a78bfa','stroke-width':'1.5','stroke-dasharray':'5,3'}));
+      gpl.appendChild(_svgEl('circle',{cx:plx0,cy:ply0,r:'4',fill:'rgba(167,139,250,0.25)',stroke:'#a78bfa','stroke-width':'1.5'}));
+      gpl.appendChild(_svgEl('circle',{cx:plx1,cy:ply1,r:'4',fill:'rgba(167,139,250,0.25)',stroke:'#a78bfa','stroke-width':'1.5'}));
+      // right-click = clear profile line
+      gpl.style.pointerEvents='all';
+      gpl.addEventListener('contextmenu',function(e){e.preventDefault();e.stopPropagation();_profileLine=[];renderAnnotations();});
+      svg.appendChild(gpl);
+    }
+
+    // ── Pending profile first point ──
     if(_profilePoints.length&&_profilePoints[0].canvasId===cid){
       var pp=_profilePoints[0],ppx=pp.px*cw+offX,ppy=pp.py*ch+offY;
       var gpp=document.createElementNS(NS,'g');
-      gpp.appendChild(_svgEl('circle',{cx:ppx,cy:ppy,r:'4',fill:'none',stroke:'#a78bfa','stroke-width':'1.5','stroke-dasharray':'3,2'}));
+      gpp.style.pointerEvents='all';
+      var ppCirc=_svgEl('circle',{cx:ppx,cy:ppy,r:'5',fill:'rgba(167,139,250,0.2)',stroke:'#a78bfa','stroke-width':'1.5','stroke-dasharray':'3,2'});
+      gpp.appendChild(ppCirc);
       gpp.appendChild(_svgEl('line',{x1:ppx-8,y1:ppy,x2:ppx+8,y2:ppy,stroke:'#a78bfa','stroke-width':'1'}));
       gpp.appendChild(_svgEl('line',{x1:ppx,y1:ppy-8,x2:ppx,y2:ppy+8,stroke:'#a78bfa','stroke-width':'1'}));
+      // right-click = cancel pending point
+      gpp.addEventListener('contextmenu',function(e){e.preventDefault();e.stopPropagation();_profilePoints=[];renderAnnotations();});
       svg.appendChild(gpp);
     }
-    // Render pending ruler first point
+
+    // ── Pending ruler first point ──
     if(_rulerPending&&_rulerPending.canvasId===cid){
-      var px=_rulerPending.ax*cw+offX,py=_rulerPending.ay*ch+offY;
-      var gp=document.createElementNS(NS,'g');
-      gp.appendChild(_svgEl('circle',{cx:px,cy:py,r:'4',fill:'none',stroke:'#a3e635','stroke-width':'1.5','stroke-dasharray':'3,2'}));
-      gp.appendChild(_svgEl('line',{x1:px-8,y1:py,x2:px+8,y2:py,stroke:'#a3e635','stroke-width':'1'}));
-      gp.appendChild(_svgEl('line',{x1:px,y1:py-8,x2:px,y2:py+8,stroke:'#a3e635','stroke-width':'1'}));
-      svg.appendChild(gp);
+      var rpx=_rulerPending.ax*cw+offX,rpy=_rulerPending.ay*ch+offY;
+      var grp=document.createElementNS(NS,'g');
+      grp.style.pointerEvents='all';
+      grp.appendChild(_svgEl('circle',{cx:rpx,cy:rpy,r:'5',fill:'rgba(163,230,53,0.2)',stroke:'#a3e635','stroke-width':'1.5','stroke-dasharray':'3,2'}));
+      grp.appendChild(_svgEl('line',{x1:rpx-8,y1:rpy,x2:rpx+8,y2:rpy,stroke:'#a3e635','stroke-width':'1'}));
+      grp.appendChild(_svgEl('line',{x1:rpx,y1:rpy-8,x2:rpx,y2:rpy+8,stroke:'#a3e635','stroke-width':'1'}));
+      // right-click = cancel pending ruler point
+      grp.addEventListener('contextmenu',function(e){e.preventDefault();e.stopPropagation();_rulerPending=null;renderAnnotations();});
+      svg.appendChild(grp);
     }
+
+    // ── Label annotations ──
     _annotations.filter(function(a){return a.canvasId===cid;}).forEach(function(a){
+      if(!a.color)a.color='#00e5ff';
+      if(!a.r)a.r=5;
+      var col=a.color;
       var ax=a.px*cw+offX, ay=a.py*ch+offY;
       var txOff=a.txOff!=null?a.txOff:65, tyOff=a.tyOff!=null?a.tyOff:-42;
       var tx=ax+txOff, ty=ay+tyOff;
-      // Measure text width
-      var charW=6.5, pad=8, delW=14;
-      var textW=a.text.length*charW+pad*2+delW, textH=18;
+      var charW=6.5, pad=8, swW=12, delW=14;
+      var textW=a.text.length*charW+pad*2+swW+delW, textH=18;
       var rx=tx-textW/2, ry=ty-textH/2;
       var g=document.createElementNS(NS,'g');
-      // Dashed callout line
-      var line=_svgEl('line',{x1:ax,y1:ay,x2:tx,y2:ty,stroke:'#00e5ff','stroke-width':'1','stroke-dasharray':'4,3',opacity:'0.85'});
-      // Dot + crosshair at click point (draggable anchor)
-      var dot=_svgEl('circle',{cx:ax,cy:ay,r:'5',fill:'rgba(0,229,255,0.15)',stroke:'#00e5ff','stroke-width':'1.5'});
-      dot.style.cursor='move'; dot.style.pointerEvents='all';
-      var hLine=_svgEl('line',{x1:ax-7,y1:ay,x2:ax+7,y2:ay,stroke:'#00e5ff','stroke-width':'1'});
-      var vLine=_svgEl('line',{x1:ax,y1:ay-7,x2:ax,y2:ay+7,stroke:'#00e5ff','stroke-width':'1'});
-      // Drag anchor point (uses global drag manager — no stacking)
-      (function(ann,oDot){
+      g.style.pointerEvents='all';
+      var line=_svgEl('line',{x1:ax,y1:ay,x2:tx,y2:ty,stroke:col,'stroke-width':'1','stroke-dasharray':'4,3',opacity:'0.85'});
+      // Anchor dot — draggable, dblclick=cycle size, right-click=delete
+      var dot=_svgEl('circle',{cx:ax,cy:ay,r:String(a.r),fill:'rgba(0,229,255,0.15)',stroke:col,'stroke-width':'1.5'});
+      dot.style.cursor='move';dot.style.pointerEvents='all';
+      var hLine=_svgEl('line',{x1:ax-7,y1:ay,x2:ax+7,y2:ay,stroke:col,'stroke-width':'1'});
+      var vLine=_svgEl('line',{x1:ax,y1:ay-7,x2:ax,y2:ay+7,stroke:col,'stroke-width':'1'});
+      // Resize grip — small square at right edge of dot, drag left/right to resize
+      var grip=_svgEl('rect',{x:ax+a.r-3,y:ay-3,width:6,height:6,rx:'1',fill:col,stroke:'#fff','stroke-width':'0.8'});
+      grip.style.cursor='ew-resize';grip.style.pointerEvents='all';
+      (function(ann,oDot,oGrip){
         oDot.addEventListener('mousedown',function(e){
           if(e.button!==0)return;
           var adStartX=e.clientX,adStartY=e.clientY,adOrigPx=ann.px,adOrigPy=ann.py;
-          e.stopPropagation(); e.preventDefault();
+          e.stopPropagation();e.preventDefault();
           _startDrag(function(ev){
-            var dx=(ev.clientX-adStartX)/cw, dy=(ev.clientY-adStartY)/ch;
+            var dx=(ev.clientX-adStartX)/cw,dy=(ev.clientY-adStartY)/ch;
             ann.px=Math.max(0,Math.min(1,adOrigPx+dx));
             ann.py=Math.max(0,Math.min(1,adOrigPy+dy));
             renderAnnotations();
           });
         });
-      })(a,dot);
+        // Resize grip drag — drag right to grow, left to shrink
+        oGrip.addEventListener('mousedown',function(e){
+          if(e.button!==0)return;
+          e.stopPropagation();e.preventDefault();
+          var gStartX=e.clientX,gStartR=ann.r;
+          _startDrag(function(ev){
+            var delta=ev.clientX-gStartX;
+            ann.r=Math.max(4,Math.min(32,Math.round(gStartR+delta)));
+            renderAnnotations();
+          });
+        });
+        // Right-click dot = delete annotation
+        oDot.addEventListener('contextmenu',function(e){
+          e.preventDefault();e.stopPropagation();
+          _annotations=_annotations.filter(function(x){return x.id!==ann.id;});
+          renderAnnotations();
+        });
+      })(a,dot,grip);
       // Text box
-      var rect=_svgEl('rect',{x:rx,y:ry,width:textW,height:textH,rx:'2',ry:'2',fill:'rgba(0,0,0,0.78)',stroke:'#00e5ff','stroke-width':'0.8'});
-      rect.style.cursor='move'; rect.style.pointerEvents='all';
-      // Label text
+      var rect=_svgEl('rect',{x:rx,y:ry,width:textW,height:textH,rx:'2',ry:'2',fill:'rgba(0,0,0,0.78)',stroke:col,'stroke-width':'0.8'});
+      rect.style.cursor='move';rect.style.pointerEvents='all';
       var txt=_svgEl('text',{x:rx+pad,y:ry+12.5,'font-family':'monospace, ui-monospace, sans-serif','font-size':'10.5',fill:'#e0f2fe'});
-      txt.textContent=a.text; txt.style.pointerEvents='none';
+      txt.textContent=a.text;txt.style.pointerEvents='none';
+      // Color swatch
+      var sw=_svgEl('rect',{x:rx+textW-swW-delW-1,y:ry+3,width:10,height:12,rx:'2',fill:col});
+      sw.style.cursor='pointer';sw.style.pointerEvents='all';
+      (function(ann){sw.onclick=function(e){e.stopPropagation();ann.color=_nextColor(ann.color,_ANNO_COLORS);renderAnnotations();};})(a);
       // Delete ×
-      var delEl=_svgEl('text',{x:rx+textW-delW+2,y:ry+13,'font-size':'12',fill:'#f87171','font-weight':'bold','text-anchor':'middle'});
-      delEl.textContent='\u00d7'; delEl.style.cursor='pointer'; delEl.style.pointerEvents='all';
+      var delEl=_svgEl('text',{x:rx+textW-delW+3,y:ry+13,'font-size':'12',fill:'#f87171','font-weight':'bold','text-anchor':'middle'});
+      delEl.textContent='\u00d7';delEl.style.cursor='pointer';delEl.style.pointerEvents='all';
       (function(aid){delEl.onclick=function(e){e.stopPropagation();deleteAnnotation(aid);};})(a.id);
-      // Drag text box (uses global drag manager — no stacking)
+      // Right-click anywhere on group = delete
+      (function(aid){g.addEventListener('contextmenu',function(e){e.preventDefault();e.stopPropagation();deleteAnnotation(aid);});})(a.id);
+      // Drag text box
       rect.addEventListener('mousedown',function(e){
         if(e.button!==0)return;
         var dStartX=e.clientX,dStartY=e.clientY;
-        var dOrigTx=a.txOff!=null?a.txOff:65, dOrigTy=a.tyOff!=null?a.tyOff:-42;
-        e.stopPropagation(); e.preventDefault();
+        var dOrigTx=a.txOff!=null?a.txOff:65,dOrigTy=a.tyOff!=null?a.tyOff:-42;
+        e.stopPropagation();e.preventDefault();
         _startDrag(function(ev){
-          a.txOff=dOrigTx+(ev.clientX-dStartX); a.tyOff=dOrigTy+(ev.clientY-dStartY);
+          a.txOff=dOrigTx+(ev.clientX-dStartX);a.tyOff=dOrigTy+(ev.clientY-dStartY);
           renderAnnotations();
         });
       });
-      g.appendChild(line); g.appendChild(hLine); g.appendChild(vLine);
-      g.appendChild(dot); g.appendChild(rect); g.appendChild(txt); g.appendChild(delEl);
+      g.appendChild(line);g.appendChild(hLine);g.appendChild(vLine);
+      g.appendChild(dot);g.appendChild(grip);g.appendChild(rect);g.appendChild(txt);g.appendChild(sw);g.appendChild(delEl);
       svg.appendChild(g);
     });
     ov.appendChild(svg);
@@ -2236,7 +2430,7 @@ function deleteAnnotation(id){
 
 function clearAnnotations(){_annotations=[];renderAnnotations();}
 function clearAllOverlays(){
-  _annotations=[];_measurements=[];_rulerPending=null;_profilePoints=[];
+  _annotations=[];_measurements=[];_rulerPending=null;_profilePoints=[];_profileLine=[];
   if(_profileMode)toggleProfileMode();
   renderAnnotations();
   // Clear profile chart
@@ -2247,11 +2441,11 @@ function clearAllOverlays(){
 
 // === LINE PROFILE ===
 var _profileMode=false;
-var _profilePoints=[];
+// _profilePoints, _profileLine declared at top of script
 
 function toggleProfileMode(){
   _profileMode=!_profileMode;
-  if(_profileMode){if(_labelMode)toggleLabelMode();if(_rulerMode)toggleRulerMode();if(_zoomMode)toggleZoomMode();}
+  if(_profileMode){if(_labelMode)toggleLabelMode();if(_rulerMode)toggleRulerMode();}
   var btn=document.getElementById('btnProfile');
   btn.style.background=_profileMode?'#7c3aed':'';
   btn.style.color=_profileMode?'#ede9fe':'';
@@ -2261,6 +2455,7 @@ function toggleProfileMode(){
     var c=document.getElementById(id);
     if(c)c.classList.toggle('lbl-mode-active',_profileMode);
   });
+  renderAnnotations();
 }
 
 function addProfilePoint(canvasId,e){
@@ -2269,13 +2464,18 @@ function addProfilePoint(canvasId,e){
   var rect=c.getBoundingClientRect();
   var px=(e.clientX-rect.left)/rect.width,py=(e.clientY-rect.top)/rect.height;
   if(!_profilePoints.length||_profilePoints[0].canvasId!==canvasId){
+    // จุดแรก — แสดงจุดรอ
     _profilePoints=[{canvasId:canvasId,px:px,py:py}];
+    _profileLine=[];
     renderAnnotations();
   } else {
-    _profilePoints.push({canvasId:canvasId,px:px,py:py});
-    drawLineProfile(_profilePoints[0],_profilePoints[1]);
+    // จุดสอง — plot และเก็บเส้นไว้แสดง
+    var p2={canvasId:canvasId,px:px,py:py};
+    _profileLine=[_profilePoints[0],p2];
+    drawLineProfile(_profilePoints[0],p2);
     _profilePoints=[];
-    toggleProfileMode();
+    toggleProfileMode(); // ออกโหมด แต่ _profileLine ยังอยู่
+    renderAnnotations(); // แสดงเส้น profile
   }
 }
 
@@ -2366,14 +2566,13 @@ function updatePSNR(procImgData){
 
 // === RULER / MEASUREMENT TOOL ===
 var _rulerMode=false;
-var _measurements=[]; // {id,canvasId,ax,ay,bx,by,pxDist}
-var _rulerPending=null; // {canvasId,ax,ay}
+// _measurements, _rulerPending declared at top of script
 
 function toggleRulerMode(){
   _rulerMode=!_rulerMode;
   // cancel label mode if active
   if(_rulerMode&&_labelMode){toggleLabelMode();}
-  if(_rulerMode&&_zoomMode){toggleZoomMode();}
+  // (zoom no longer has a mode to deactivate)
   var btn=document.getElementById('btnRuler');
   btn.style.background=_rulerMode?'#0e7490':'';
   btn.style.color=_rulerMode?'#e0f2fe':'';
@@ -2406,7 +2605,7 @@ function addRulerPoint(canvasId,e){
   }
 }
 
-// Hook canvas clicks for annotation + ruler
+// Hook canvas clicks for annotation + ruler + profile
 ['origCanvas','procCanvas'].forEach(function(cid){
   var el=document.getElementById(cid);
   if(!el)return;
@@ -2414,6 +2613,16 @@ function addRulerPoint(canvasId,e){
     if(_labelMode){e.stopPropagation();addAnnotation(cid,e);}
     else if(_rulerMode){e.stopPropagation();addRulerPoint(cid,e);}
     else if(_profileMode){e.stopPropagation();addProfilePoint(cid,e);}
+  });
+  // Right-click on canvas = cancel pending point of active tool
+  el.addEventListener('contextmenu',function(e){
+    if(_rulerMode&&_rulerPending){
+      e.preventDefault();e.stopPropagation();
+      _rulerPending=null;renderAnnotations();
+    } else if(_profileMode&&_profilePoints.length){
+      e.preventDefault();e.stopPropagation();
+      _profilePoints=[];renderAnnotations();
+    }
   });
 });
 
