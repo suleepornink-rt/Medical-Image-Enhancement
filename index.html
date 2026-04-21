@@ -186,8 +186,10 @@ select{width:100%;padding:5px 8px;border:1px solid var(--brd);border-radius:6px;
 .fft-lbl{position:absolute;top:3px;left:4px;z-index:6;font-size:.6rem;font-weight:700;
   color:#e2e8f0;background:rgba(15,23,42,.88);padding:2px 6px;border-radius:4px;
   pointer-events:none;letter-spacing:.2px;white-space:nowrap}
-/* Hide fft labels when stage is bypassed (bypass badge covers canvas anyway) */
+/* Hide fft-lbl when step is bypassed so bypass badge is not obscured */
 .step-item.s-off .fft-lbl{display:none}
+/* Show fft-lbl when step is active (bypass badge is already hidden by s-on rule) */
+.step-item.s-on .fft-lbl{display:block}
 
 /* ── Phone portrait (≤ 767 px wide) ── */
 @media(max-width:767px){
@@ -1493,6 +1495,9 @@ function drawIndependentPreviews(){
       for(var y=0;y<base.height;y++)for(var x=0;x<base.width;x++)re[y*padW+x]=base.data[(y*base.width+x)*4];
       fft2d(re,im_a,padW,padH,false);
       drawSpectrum('sc3',re,im_a,padW,padH,cutoff);
+      // Cache sc3 spectrum ImageData so cache-hit can redraw it
+      var _sc3el=document.getElementById('sc3');
+      _ip.sp3=_sc3el?_sc3el.getContext('2d').getImageData(0,0,_sc3el.width,_sc3el.height):null;
       fftShift(re,im_a,padW,padH);
       for(var y=0;y<padH;y++)for(var x=0;x<padW;x++){
         var cy2=y-padH/2,cx2=x-padW/2,dist=Math.sqrt(cx2*cx2+cy2*cy2),hf=1;
@@ -1506,6 +1511,9 @@ function drawIndependentPreviews(){
         re[y*padW+x]*=hf;im_a[y*padW+x]*=hf;
       }
       drawSpectrum('sc3b',re,im_a,padW,padH,0);
+      // Cache sc3b spectrum ImageData so cache-hit can redraw it
+      var _sc3bel=document.getElementById('sc3b');
+      _ip.sp3b=_sc3bel?_sc3bel.getContext('2d').getImageData(0,0,_sc3bel.width,_sc3bel.height):null;
       fftShift(re,im_a,padW,padH);
       fft2d(re,im_a,padW,padH,true);
       for(var y=0;y<base.height;y++)for(var x=0;x<base.width;x++){
@@ -1513,16 +1521,24 @@ function drawIndependentPreviews(){
         var idx=(y*base.width+x)*4;base.data[idx]=base.data[idx+1]=base.data[idx+2]=v;
       }
       _ip.v[2]=ik2;_ip.d[2]=cloneID(base);
-      // sc3/sc3b already drawn via drawSpectrum above
     } else {
+      _ip.sp3=null;_ip.sp3b=null;
       var s3b=document.getElementById('sc3b');
       if(s3b)s3b.getContext('2d').clearRect(0,0,s3b.width,s3b.height);
       _ip.v[2]=ik2;_ip.d[2]=cloneID(base);
       drawStep('sc3',base);
     }
   } else {
-    // Cache hit — sc3/sc3b retain correct content; only need explicit redraw for non-FFT
-    if(ff==='none')drawStep('sc3',_ip.d[2]);
+    // Cache hit — restore spectra or image from cache
+    if(ff==='none'){
+      drawStep('sc3',_ip.d[2]);
+      var _s3bh=document.getElementById('sc3b');
+      if(_s3bh)_s3bh.getContext('2d').clearRect(0,0,_s3bh.width,_s3bh.height);
+    } else {
+      // FFT active: redraw cached spectrum ImageData for both canvases
+      if(_ip.sp3){var _c3h=document.getElementById('sc3');if(_c3h){_c3h.width=_ip.sp3.width;_c3h.height=_ip.sp3.height;_c3h.getContext('2d').putImageData(_ip.sp3,0,0);}}
+      if(_ip.sp3b){var _c3bh=document.getElementById('sc3b');if(_c3bh){_c3bh.width=_ip.sp3b.width;_c3bh.height=_ip.sp3b.height;_c3bh.getContext('2d').putImageData(_ip.sp3b,0,0);}}
+    }
   }
 
   // ── Preview 4: Denoise ────────────────────────────
@@ -1961,7 +1977,6 @@ function exportWithParams(){
   // Timestamp
   ctx.fillStyle='#475569';ctx.font='9px monospace';
   ctx.fillText(new Date().toLocaleString(),ec.width-180,pc.height+barH-6);
-  var a=document.createElement('a');
   var tname=tabs[currentTab].name.replace(/[^a-z0-9]+/gi,'_');
   var suggestName='mie_'+tname+'_'+Date.now()+'.png';
   // Try File System Access API first (folder + filename picker)
@@ -2143,6 +2158,8 @@ function openZoom(sourceCanvasId,title){
   zoom.sourceId=sourceCanvasId;
   zoom.comparing=false;
   zoomCanvas2.style.display='none';
+  // Always reset Compare button label when opening zoom
+  document.getElementById('btnCompare').textContent='Compare';
   document.getElementById('btnCompare').style.display=(sourceCanvasId==='procCanvas'||sourceCanvasId==='origCanvas')?'':'none';
   zoomCanvas.width=src.width;zoomCanvas.height=src.height;
   zoomCanvas.getContext('2d').drawImage(src,0,0);
@@ -2154,7 +2171,12 @@ function openZoom(sourceCanvasId,title){
   setTimeout(function(){hint.style.opacity='0'},3000);
 }
 
-function closeZoom(){zoomOverlay.classList.remove('open');zoom.comparing=false;zoomCanvas2.style.display='none'}
+function closeZoom(){
+  zoomOverlay.classList.remove('open');
+  zoom.comparing=false;
+  zoomCanvas2.style.display='none';
+  document.getElementById('btnCompare').textContent='Compare';
+}
 
 function zoomAction(type){
   var vw=zoomViewport.clientWidth,vh=zoomViewport.clientHeight;
@@ -2173,11 +2195,22 @@ function zoomAction(type){
       zoomCanvas2.getContext('2d').drawImage(other,0,0);
       zoomCanvas2.style.display='block';
       document.getElementById('btnCompare').textContent='Hide Compare';
-      document.getElementById('zoomTitle').textContent='Compare: Original vs Processed';
+      document.getElementById('zoomTitle').textContent='◀ Original  |  Processed ▶';
+      // Auto-fit both canvases side by side centered in viewport
+      var vw2=zoomViewport.clientWidth,vh2=zoomViewport.clientHeight;
+      var bothW=zoomCanvas.width*2+12;
+      zoom.scale=Math.min(vw2/bothW,vh2/zoomCanvas.height,3);
+      zoom.panX=vw2/2; // center point: canvas1 left of it, canvas2 right of it
+      zoom.panY=(vh2-zoomCanvas.height*zoom.scale)/2;
     } else {
       zoomCanvas2.style.display='none';
       document.getElementById('btnCompare').textContent='Compare';
       document.getElementById('zoomTitle').textContent=zoom.sourceId==='origCanvas'?'Original':'Processed';
+      // Re-fit single canvas
+      var vw2=zoomViewport.clientWidth,vh2=zoomViewport.clientHeight;
+      zoom.scale=Math.min(vw2/zoomCanvas.width,vh2/zoomCanvas.height,4);
+      zoom.panX=(vw2-zoomCanvas.width*zoom.scale)/2;
+      zoom.panY=(vh2-zoomCanvas.height*zoom.scale)/2;
     }
     updateZoomTransform();return;
   }
@@ -2191,10 +2224,11 @@ function updateZoomTransform(){
   var t='translate('+zoom.panX+'px,'+zoom.panY+'px) scale('+zoom.scale+')';
   zoomCanvas.style.transform=t;
   if(zoom.comparing){
-    // Fixed 12px gap between the two images regardless of zoom level
-    var halfW=zoomCanvas.width*zoom.scale/2+6;
-    zoomCanvas.style.transform='translate('+(zoom.panX-halfW)+'px,'+zoom.panY+'px) scale('+zoom.scale+')';
-    zoomCanvas2.style.transform='translate('+(zoom.panX+halfW)+'px,'+zoom.panY+'px) scale('+zoom.scale+')';
+    // panX = center divider: canvas1 (w*scale wide) ends 6px left of panX,
+    //                        canvas2 starts 6px right of panX → 12px gap, both symmetric
+    var w=zoomCanvas.width*zoom.scale;
+    zoomCanvas.style.transform='translate('+(zoom.panX-w-6)+'px,'+zoom.panY+'px) scale('+zoom.scale+')';
+    zoomCanvas2.style.transform='translate('+(zoom.panX+6)+'px,'+zoom.panY+'px) scale('+zoom.scale+')';
   }
   document.getElementById('zoomLevel').textContent=Math.round(zoom.scale*100)+'%';
 }
