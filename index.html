@@ -182,16 +182,17 @@ select{width:100%;padding:5px 8px;border:1px solid var(--brd);border-radius:6px;
 .mob-backdrop.open{display:block}
 /* ── Bottom sheet drag handle ── */
 .mob-handle{width:40px;height:4px;background:#d1d5db;border-radius:2px;margin:10px auto 4px;display:none}
-
-/* ── iOS Safari fill-available fix (applies to all mobile) ── */
-@supports(-webkit-touch-callout:none){
-  html{height:-webkit-fill-available}
-  body{height:-webkit-fill-available}
-}
+/* ── FFT Pre/Post canvas labels ── */
+.fft-lbl{position:absolute;top:3px;left:4px;z-index:2;font-size:.6rem;font-weight:700;
+  color:#e2e8f0;background:rgba(15,23,42,.78);padding:2px 6px;border-radius:4px;
+  pointer-events:none;letter-spacing:.2px;white-space:nowrap}
 
 /* ── Phone portrait (≤ 767 px wide) ── */
 @media(max-width:767px){
-  body{height:100dvh}
+  /* Viewport height: JS sets --vh = window.innerHeight/100; use it here */
+  /* Fallback chain covers iOS Safari, Android Chrome, all versions */
+  html{height:100%}
+  body{height:100vh;height:calc(var(--vh,1vh)*100)}
 
   /* Header compact */
   header{padding:6px 10px;gap:6px;min-height:44px}
@@ -211,15 +212,16 @@ select{width:100%;padding:5px 8px;border:1px solid var(--brd);border-radius:6px;
     transition:max-height .32s cubic-bezier(.4,0,.2,1);
     box-shadow:0 -8px 30px rgba(0,0,0,.28);
   }
-  .panel.mob-open{max-height:65vh;overflow-y:auto}
+  .panel.mob-open{max-height:calc(var(--vh,1vh)*65);overflow-y:auto}
 
   .display{flex:1;min-width:0}
   .compare{flex:1;min-height:80px}
-  .bottom-bar{height:116px;min-height:116px}
+  .bottom-bar{height:112px;min-height:112px}
   .hist-panel{display:none}
   .steps{flex:1;overflow-x:auto}
   .step-item{min-width:74px}
   .step-item .slbl{font-size:.5rem;padding:2px 4px}
+  .fft-lbl{font-size:.62rem;padding:2px 5px}
   .help-box{width:calc(100vw - 14px);max-height:88vh;margin:8px auto}
   .help-body{padding:10px 12px}
   .zoom-topbar{flex-wrap:wrap;gap:5px;padding:6px 10px}
@@ -227,9 +229,10 @@ select{width:100%;padding:5px 8px;border:1px solid var(--brd);border-radius:6px;
   .btn{flex:none;min-width:0;padding:5px 8px;font-size:.64rem}
 }
 
-/* ── Phone landscape (short viewport ≤ 500 px tall, wider than 500 px) ── */
+/* ── Phone landscape (height ≤ 500 px, width > 500 px) ── */
 @media(max-height:500px) and (min-width:500px){
-  body{height:100dvh}
+  html{height:100%}
+  body{height:100vh;height:calc(var(--vh,1vh)*100)}
   header{padding:4px 10px;min-height:36px}
   header h1{font-size:.8rem}
   header>div:first-child>div{display:none}
@@ -237,7 +240,7 @@ select{width:100%;padding:5px 8px;border:1px solid var(--brd);border-radius:6px;
   .mob-toggle{display:flex}
   .mob-handle{display:none}
 
-  /* Panel → left drawer (horizontal space available in landscape) */
+  /* Panel → left drawer */
   .panel{
     position:fixed;left:0;top:0;bottom:0;
     width:min(78vw,290px);min-width:0;border-right:2px solid var(--brd);
@@ -249,13 +252,17 @@ select{width:100%;padding:5px 8px;border:1px solid var(--brd);border-radius:6px;
   }
   .panel.mob-open{transform:translateX(0)}
 
+  /* Tablet query sets width:240px — override since panel is fixed */
+  .panel{width:min(78vw,290px)!important;min-width:0!important}
+
   .display{flex:1;min-width:0}
   .compare{flex:1;min-height:60px}
-  .bottom-bar{height:88px;min-height:88px}
+  .bottom-bar{height:84px;min-height:84px}
   .hist-panel{display:none}
   .steps{flex:1;overflow-x:auto}
-  .step-item{min-width:66px}
-  .step-item .slbl{font-size:.48rem;padding:2px 3px}
+  .step-item{min-width:64px}
+  .step-item .slbl{font-size:.47rem;padding:2px 3px}
+  .fft-lbl{font-size:.55rem;padding:1px 4px}
   .btns{flex-wrap:wrap;gap:3px;padding:4px 6px}
   .btn{flex:none;padding:4px 7px;font-size:.6rem}
 }
@@ -451,7 +458,7 @@ select{width:100%;padding:5px 8px;border:1px solid var(--brd);border-radius:6px;
 <div class="steps">
 <div class="step-item s-off" id="stitem1"><div class="slbl" id="slbl1">1. Noise</div><div class="step-bypass"><span>bypass</span></div><div class="scwrap"><canvas id="sc1" width="900" height="900"></canvas></div></div>
 <div class="step-item s-off" id="stitem2"><div class="slbl" id="slbl2">2. Contrast</div><div class="step-bypass"><span>bypass</span></div><div class="scwrap"><canvas id="sc2" width="900" height="900"></canvas></div></div>
-<div class="step-item s-off" id="stitem3"><div class="slbl" id="slbl3">3. Spatial / FFT</div><div class="step-bypass"><span>bypass</span></div><div class="scwrap" style="flex-direction:column"><div style="flex:1;position:relative;display:flex;align-items:center;justify-content:center;background:#111;min-height:0;overflow:hidden;width:100%"><div style="position:absolute;top:3px;left:4px;z-index:2;font-size:.58rem;color:#9ca3af;background:rgba(0,0,0,.6);padding:1px 5px;border-radius:3px;pointer-events:none">▲ Pre</div><canvas id="sc3" width="900" height="450" style="max-width:100%;max-height:100%"></canvas></div><div style="flex:1;position:relative;display:flex;align-items:center;justify-content:center;background:#111;min-height:0;overflow:hidden;width:100%;border-top:1px solid #1e293b"><div style="position:absolute;top:3px;left:4px;z-index:2;font-size:.58rem;color:#9ca3af;background:rgba(0,0,0,.6);padding:1px 5px;border-radius:3px;pointer-events:none">▼ Post</div><canvas id="sc3b" width="900" height="450" style="max-width:100%;max-height:100%"></canvas></div></div></div>
+<div class="step-item s-off" id="stitem3"><div class="slbl" id="slbl3">3. Spatial / FFT</div><div class="step-bypass"><span>bypass</span></div><div class="scwrap" style="flex-direction:column"><div style="flex:1;position:relative;display:flex;align-items:center;justify-content:center;background:#111;min-height:0;overflow:hidden;width:100%"><div class="fft-lbl">▲ Pre-filter</div><canvas id="sc3" width="900" height="450" style="max-width:100%;max-height:100%"></canvas></div><div style="flex:1;position:relative;display:flex;align-items:center;justify-content:center;background:#111;min-height:0;overflow:hidden;width:100%;border-top:1px solid #1e293b"><div class="fft-lbl">▼ Post-filter</div><canvas id="sc3b" width="900" height="450" style="max-width:100%;max-height:100%"></canvas></div></div></div>
 <div class="step-item s-off" id="stitem4"><div class="slbl" id="slbl4">4. Denoise</div><div class="step-bypass"><span>bypass</span></div><div class="scwrap"><canvas id="sc4" width="900" height="900"></canvas></div></div>
 <div class="step-item s-off" id="stitem5"><div class="slbl" id="slbl5">5. Segment</div><div class="step-bypass"><span>bypass</span></div><div class="scwrap"><canvas id="sc5" width="900" height="900"></canvas></div></div>
 <div class="step-item s-off" id="stitem6"><div class="slbl" id="slbl6">6. Morphology</div><div class="step-bypass"><span>bypass</span></div><div class="scwrap"><canvas id="sc6" width="900" height="900"></canvas></div></div>
@@ -631,6 +638,18 @@ function _attachHoverReadout(canvasId,label){
 }
 // Will be attached after DOM ready (at bottom of script)
 
+
+// === MOBILE VIEWPORT HEIGHT FIX (iOS Safari + Android) ===
+// Sets --vh CSS variable = 1% of actual visible window height.
+// Fixes iOS Safari 100vh bug and works on all Android versions.
+(function(){
+  function _setVH(){
+    document.documentElement.style.setProperty('--vh',window.innerHeight*.01+'px');
+  }
+  _setVH();
+  window.addEventListener('resize',_setVH);
+  window.addEventListener('orientationchange',function(){setTimeout(_setVH,150)});
+})();
 
 // === TABS ===
 var TAB_COLORS=['#a78bfa','#f472b6','#34d399','#fbbf24','#60a5fa'];
