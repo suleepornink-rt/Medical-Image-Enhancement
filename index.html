@@ -164,6 +164,53 @@ select{width:100%;padding:5px 8px;border:1px solid var(--brd);border-radius:6px;
 .help-kbds span{font-size:.75rem;color:#374151}
 .help-pill{display:inline-flex;align-items:center;background:#f5f3ff;border:1px solid #ede9fe;color:#7c3aed;border-radius:20px;padding:2px 9px;font-size:.68rem;font-weight:600;margin:2px}
 .help-arrow{color:#c4b5fd;margin:0 2px}
+
+/* ── Mobile toggle button (hidden on desktop) ── */
+.mob-toggle{display:none;align-items:center;gap:5px;padding:5px 12px;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);color:#fff;border-radius:20px;font-size:.75rem;font-weight:700;cursor:pointer;transition:.15s;flex-shrink:0}
+.mob-toggle:hover{background:rgba(255,255,255,.32)}
+
+/* ── Tablet (768–1023 px) ── */
+@media(max-width:1023px){
+  .panel{width:240px;min-width:240px}
+  .flow-pills{flex-wrap:wrap;max-width:320px}
+  .bottom-bar{height:140px;min-height:140px}
+  .step-item{min-width:100px}
+}
+
+/* ── Phone (≤ 767 px) ── */
+@media(max-width:767px){
+  html,body{height:auto;overflow-y:auto;overflow-x:hidden}
+  body{flex-direction:column}
+  header{padding:8px 12px;flex-wrap:wrap;gap:6px}
+  header h1{font-size:.95rem}
+  header>div:first-child div{display:none} /* hide subtitle */
+  .flow-pills{display:none}
+  .mob-toggle{display:flex}
+  .app{flex-direction:column;flex:none;overflow:visible;height:auto}
+  .panel{width:100%;min-width:0;border-right:none;border-bottom:2px solid var(--brd);
+    max-height:0;overflow:hidden;transition:max-height .35s ease;flex-shrink:0}
+  .panel.mob-open{max-height:75vh;overflow-y:auto}
+  .display{flex:none;height:auto;overflow:visible}
+  .compare{height:46vw;min-height:160px;flex-shrink:0}
+  .bottom-bar{height:130px;min-height:130px;flex-shrink:0}
+  .steps{overflow-x:auto}
+  .step-item{min-width:80px}
+  .hist-panel{min-width:160px;flex:none;width:160px}
+  .hist-half .hlbl{font-size:.55rem;padding:3px 6px}
+  .logbar{flex-shrink:0}
+  /* Help modal */
+  .help-box{width:calc(100vw - 16px);margin:8px auto}
+  .help-body{padding:12px}
+  /* Zoom toolbar */
+  .zoom-topbar{flex-wrap:wrap;gap:6px;padding:8px 10px}
+  /* Buttons bar */
+  .btns{flex-wrap:wrap}
+  .btn{flex:none;padding:6px 9px;font-size:.68rem}
+  /* Panel scroll area */
+  .panel-scroll{overflow-y:auto}
+  /* Tab bar */
+  .tab-bar{overflow-x:auto}
+}
 </style>
 </head>
 <body>
@@ -186,6 +233,7 @@ select{width:100%;padding:5px 8px;border:1px solid var(--brd);border-radius:6px;
 <span class="pill active" id="fp10">Output</span>
 </div>
 <button onclick="toggleHelp()" style="background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.35);color:#fff;padding:4px 11px;border-radius:20px;font-size:.72rem;font-weight:700;cursor:pointer;transition:.15s" onmouseover="this.style.background='rgba(255,255,255,.35)'" onmouseout="this.style.background='rgba(255,255,255,.2)'">? คู่มือ</button>
+<button class="mob-toggle" id="mobToggleBtn" onclick="toggleMobilePanel()">☰ Controls</button>
 </header>
 
 <!-- Global tooltip (JS-positioned) -->
@@ -195,7 +243,7 @@ select{width:100%;padding:5px 8px;border:1px solid var(--brd);border-radius:6px;
 
 <div class="app">
 <!-- LEFT PANEL -->
-<div class="panel">
+<div class="panel" id="mainPanel">
 <!-- Tab bar rendered by JS -->
 <div class="tab-bar" id="tabBar"></div>
 <div class="panel-scroll">
@@ -2628,6 +2676,14 @@ function addRulerPoint(canvasId,e){
 
 // Save/restore annotations with tabs
 // (Integrated into captureState/restoreState below)
+
+// === MOBILE PANEL TOGGLE ===
+function toggleMobilePanel(){
+  var p=document.getElementById('mainPanel');
+  var btn=document.getElementById('mobToggleBtn');
+  var open=p.classList.toggle('mob-open');
+  btn.textContent=open?'✕ Close':'☰ Controls';
+}
 
 // === HELP MODAL ===
 function toggleHelp(){
