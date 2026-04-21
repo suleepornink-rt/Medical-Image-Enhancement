@@ -177,39 +177,59 @@ select{width:100%;padding:5px 8px;border:1px solid var(--brd);border-radius:6px;
   .step-item{min-width:100px}
 }
 
+/* ── Mobile backdrop (for drawer) ── */
+.mob-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:999}
+.mob-backdrop.open{display:block}
+
 /* ── Phone (≤ 767 px) ── */
 @media(max-width:767px){
-  html,body{height:auto;overflow-y:auto;overflow-x:hidden}
-  body{flex-direction:column}
-  header{padding:8px 12px;flex-wrap:wrap;gap:6px}
-  header h1{font-size:.95rem}
-  header>div:first-child div{display:none} /* hide subtitle */
+  /* Header — compact single row */
+  header{padding:6px 10px;gap:6px}
+  header h1{font-size:.88rem}
+  header>div:first-child>div{display:none}
   .flow-pills{display:none}
   .mob-toggle{display:flex}
-  .app{flex-direction:column;flex:none;overflow:visible;height:auto}
-  .panel{width:100%;min-width:0;border-right:none;border-bottom:2px solid var(--brd);
-    max-height:0;overflow:hidden;transition:max-height .35s ease;flex-shrink:0}
-  .panel.mob-open{max-height:75vh;overflow-y:auto}
-  .display{flex:none;height:auto;overflow:visible}
-  .compare{height:46vw;min-height:160px;flex-shrink:0}
-  .bottom-bar{height:130px;min-height:130px;flex-shrink:0}
-  .steps{overflow-x:auto}
-  .step-item{min-width:80px}
-  .hist-panel{min-width:160px;flex:none;width:160px}
-  .hist-half .hlbl{font-size:.55rem;padding:3px 6px}
-  .logbar{flex-shrink:0}
-  /* Help modal */
-  .help-box{width:calc(100vw - 16px);margin:8px auto}
-  .help-body{padding:12px}
-  /* Zoom toolbar */
-  .zoom-topbar{flex-wrap:wrap;gap:6px;padding:8px 10px}
-  /* Buttons bar */
-  .btns{flex-wrap:wrap}
-  .btn{flex:none;padding:6px 9px;font-size:.68rem}
-  /* Panel scroll area */
-  .panel-scroll{overflow-y:auto}
-  /* Tab bar */
-  .tab-bar{overflow-x:auto}
+
+  /* Panel → fixed slide-in drawer from left */
+  .panel{
+    position:fixed;left:0;top:0;bottom:0;
+    width:min(82vw,300px);min-width:0;
+    z-index:1000;
+    transform:translateX(-100%);
+    transition:transform .28s cubic-bezier(.4,0,.2,1);
+    border-right:2px solid var(--brd);
+    box-shadow:6px 0 24px rgba(0,0,0,.35);
+    overflow-y:auto;overflow-x:hidden;
+  }
+  .panel.mob-open{transform:translateX(0)}
+
+  /* Display fills everything — panel is out of flow */
+  .display{flex:1;min-width:0}
+
+  /* Compare: portrait-friendly height */
+  .compare{height:calc(100vh - 46px - 130px - 22px);min-height:120px}
+
+  /* Bottom bar — slimmer, hist hidden */
+  .bottom-bar{height:130px;min-height:130px}
+  .hist-panel{display:none}
+  .steps{flex:1;overflow-x:auto}
+  .step-item{min-width:78px}
+  .step-item .slbl{font-size:.52rem;padding:2px 5px}
+
+  /* Log bar */
+  .logbar{font-size:.6rem}
+
+  /* Help modal — full width */
+  .help-box{width:calc(100vw - 16px);max-height:88vh;margin:8px auto}
+  .help-body{padding:10px 12px}
+
+  /* Zoom toolbar wrap */
+  .zoom-topbar{flex-wrap:wrap;gap:5px;padding:6px 10px}
+  .zoom-btn{padding:4px 10px;font-size:.7rem}
+
+  /* Buttons */
+  .btns{flex-wrap:wrap;gap:4px;padding:6px 8px}
+  .btn{flex:none;min-width:0;padding:5px 8px;font-size:.65rem}
 }
 </style>
 </head>
@@ -240,6 +260,9 @@ select{width:100%;padding:5px 8px;border:1px solid var(--brd);border-radius:6px;
 <div id="tipGlobal"></div>
 <!-- Hover pixel readout -->
 <div id="hoverReadout"></div>
+
+<!-- Mobile drawer backdrop -->
+<div class="mob-backdrop" id="mobBackdrop" onclick="toggleMobilePanel()"></div>
 
 <div class="app">
 <!-- LEFT PANEL -->
@@ -2681,7 +2704,9 @@ function addRulerPoint(canvasId,e){
 function toggleMobilePanel(){
   var p=document.getElementById('mainPanel');
   var btn=document.getElementById('mobToggleBtn');
+  var bd=document.getElementById('mobBackdrop');
   var open=p.classList.toggle('mob-open');
+  if(bd)bd.classList.toggle('open',open);
   btn.textContent=open?'✕ Close':'☰ Controls';
 }
 
