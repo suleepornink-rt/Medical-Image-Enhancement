@@ -177,59 +177,64 @@ select{width:100%;padding:5px 8px;border:1px solid var(--brd);border-radius:6px;
   .step-item{min-width:100px}
 }
 
-/* ── Mobile backdrop (for drawer) ── */
+/* ── Mobile backdrop ── */
 .mob-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:999}
 .mob-backdrop.open{display:block}
+/* ── Bottom sheet drag handle ── */
+.mob-handle{width:40px;height:4px;background:#d1d5db;border-radius:2px;margin:10px auto 4px;display:none}
+@media(max-width:767px){.mob-handle{display:block}}
 
 /* ── Phone (≤ 767 px) ── */
 @media(max-width:767px){
-  /* Header — compact single row */
-  header{padding:6px 10px;gap:6px}
+  /* iOS Safari dynamic viewport fix */
+  html{height:100%;height:-webkit-fill-available}
+  body{height:100vh;height:100dvh;height:-webkit-fill-available}
+
+  /* Header — compact */
+  header{padding:6px 10px;gap:6px;min-height:44px}
   header h1{font-size:.88rem}
   header>div:first-child>div{display:none}
   .flow-pills{display:none}
   .mob-toggle{display:flex}
 
-  /* Panel → fixed slide-in drawer from left */
+  /* Panel → fixed BOTTOM SHEET */
   .panel{
-    position:fixed;left:0;top:0;bottom:0;
-    width:min(82vw,300px);min-width:0;
+    position:fixed;
+    left:0;right:0;bottom:0;
+    width:100%;min-width:0;
+    border-right:none;
+    border-top:2px solid var(--pri2);
+    border-radius:16px 16px 0 0;
     z-index:1000;
-    transform:translateX(-100%);
-    transition:transform .28s cubic-bezier(.4,0,.2,1);
-    border-right:2px solid var(--brd);
-    box-shadow:6px 0 24px rgba(0,0,0,.35);
-    overflow-y:auto;overflow-x:hidden;
+    max-height:0;
+    overflow:hidden;
+    transition:max-height .32s cubic-bezier(.4,0,.2,1);
+    box-shadow:0 -8px 30px rgba(0,0,0,.28);
   }
-  .panel.mob-open{transform:translateX(0)}
+  .panel.mob-open{max-height:65vh;overflow-y:auto}
 
-  /* Display fills everything — panel is out of flow */
+  /* Display fills all remaining space */
   .display{flex:1;min-width:0}
+  .compare{flex:1;min-height:80px}
 
-  /* Compare: portrait-friendly height */
-  .compare{height:calc(100vh - 46px - 130px - 22px);min-height:120px}
-
-  /* Bottom bar — slimmer, hist hidden */
-  .bottom-bar{height:130px;min-height:130px}
+  /* Bottom bar — slim, no histogram */
+  .bottom-bar{height:116px;min-height:116px}
   .hist-panel{display:none}
   .steps{flex:1;overflow-x:auto}
-  .step-item{min-width:78px}
-  .step-item .slbl{font-size:.52rem;padding:2px 5px}
+  .step-item{min-width:74px}
+  .step-item .slbl{font-size:.5rem;padding:2px 4px}
 
-  /* Log bar */
-  .logbar{font-size:.6rem}
-
-  /* Help modal — full width */
-  .help-box{width:calc(100vw - 16px);max-height:88vh;margin:8px auto}
+  /* Help modal */
+  .help-box{width:calc(100vw - 14px);max-height:88vh;margin:8px auto}
   .help-body{padding:10px 12px}
 
-  /* Zoom toolbar wrap */
+  /* Zoom */
   .zoom-topbar{flex-wrap:wrap;gap:5px;padding:6px 10px}
-  .zoom-btn{padding:4px 10px;font-size:.7rem}
+  .zoom-btn{padding:4px 9px;font-size:.68rem}
 
   /* Buttons */
-  .btns{flex-wrap:wrap;gap:4px;padding:6px 8px}
-  .btn{flex:none;min-width:0;padding:5px 8px;font-size:.65rem}
+  .btns{flex-wrap:wrap;gap:4px;padding:5px 8px}
+  .btn{flex:none;min-width:0;padding:5px 8px;font-size:.64rem}
 }
 </style>
 </head>
@@ -253,7 +258,7 @@ select{width:100%;padding:5px 8px;border:1px solid var(--brd);border-radius:6px;
 <span class="pill active" id="fp10">Output</span>
 </div>
 <button onclick="toggleHelp()" style="background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.35);color:#fff;padding:4px 11px;border-radius:20px;font-size:.72rem;font-weight:700;cursor:pointer;transition:.15s" onmouseover="this.style.background='rgba(255,255,255,.35)'" onmouseout="this.style.background='rgba(255,255,255,.2)'">? คู่มือ</button>
-<button class="mob-toggle" id="mobToggleBtn" onclick="toggleMobilePanel()">☰ Controls</button>
+<button class="mob-toggle" id="mobToggleBtn" onclick="toggleMobilePanel()">▲ Controls</button>
 </header>
 
 <!-- Global tooltip (JS-positioned) -->
@@ -267,6 +272,8 @@ select{width:100%;padding:5px 8px;border:1px solid var(--brd);border-radius:6px;
 <div class="app">
 <!-- LEFT PANEL -->
 <div class="panel" id="mainPanel">
+<!-- Mobile drag handle (only visible on phone) -->
+<div class="mob-handle"></div>
 <!-- Tab bar rendered by JS -->
 <div class="tab-bar" id="tabBar"></div>
 <div class="panel-scroll">
@@ -2707,7 +2714,7 @@ function toggleMobilePanel(){
   var bd=document.getElementById('mobBackdrop');
   var open=p.classList.toggle('mob-open');
   if(bd)bd.classList.toggle('open',open);
-  btn.textContent=open?'✕ Close':'☰ Controls';
+  btn.textContent=open?'▼ Close':'▲ Controls';
 }
 
 // === HELP MODAL ===
