@@ -183,16 +183,18 @@ select{width:100%;padding:5px 8px;border:1px solid var(--brd);border-radius:6px;
 /* ── Bottom sheet drag handle ── */
 .mob-handle{width:40px;height:4px;background:#d1d5db;border-radius:2px;margin:10px auto 4px;display:none}
 /* ── FFT Pre/Post canvas labels ── */
-.fft-lbl{position:absolute;top:3px;left:4px;z-index:2;font-size:.6rem;font-weight:700;
-  color:#e2e8f0;background:rgba(15,23,42,.78);padding:2px 6px;border-radius:4px;
+.fft-lbl{position:absolute;top:3px;left:4px;z-index:6;font-size:.6rem;font-weight:700;
+  color:#e2e8f0;background:rgba(15,23,42,.88);padding:2px 6px;border-radius:4px;
   pointer-events:none;letter-spacing:.2px;white-space:nowrap}
+/* Hide fft labels when stage is bypassed (bypass badge covers canvas anyway) */
+.step-item.s-off .fft-lbl{display:none}
 
 /* ── Phone portrait (≤ 767 px wide) ── */
 @media(max-width:767px){
-  /* Viewport height: JS sets --vh = window.innerHeight/100; use it here */
-  /* Fallback chain covers iOS Safari, Android Chrome, all versions */
-  html{height:100%}
-  body{height:100vh;height:calc(var(--vh,1vh)*100)}
+  /* position:fixed;inset:0 anchors body to the EXACT visible viewport
+     on every iOS/Android browser version — overrides all 100vh quirks */
+  html{overflow:hidden}
+  body{position:fixed;top:0;left:0;right:0;bottom:0;height:auto!important;overflow:hidden}
 
   /* Header compact */
   header{padding:6px 10px;gap:6px;min-height:44px}
@@ -212,7 +214,7 @@ select{width:100%;padding:5px 8px;border:1px solid var(--brd);border-radius:6px;
     transition:max-height .32s cubic-bezier(.4,0,.2,1);
     box-shadow:0 -8px 30px rgba(0,0,0,.28);
   }
-  .panel.mob-open{max-height:calc(var(--vh,1vh)*65);overflow-y:auto}
+  .panel.mob-open{max-height:65vh;overflow-y:auto}
 
   .display{flex:1;min-width:0}
   .compare{flex:1;min-height:80px}
@@ -231,8 +233,8 @@ select{width:100%;padding:5px 8px;border:1px solid var(--brd);border-radius:6px;
 
 /* ── Phone landscape (height ≤ 500 px, width > 500 px) ── */
 @media(max-height:500px) and (min-width:500px){
-  html{height:100%}
-  body{height:100vh;height:calc(var(--vh,1vh)*100)}
+  html{overflow:hidden}
+  body{position:fixed;top:0;left:0;right:0;bottom:0;height:auto!important;overflow:hidden}
   header{padding:4px 10px;min-height:36px}
   header h1{font-size:.8rem}
   header>div:first-child>div{display:none}
