@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Medical Image Enhancement</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -194,9 +194,14 @@ select{width:100%;padding:5px 8px;border:1px solid var(--brd);border-radius:6px;
 /* ── Phone portrait (≤ 767 px wide) ── */
 @media(max-width:767px){
   /* position:fixed;inset:0 anchors body to the EXACT visible viewport
-     on every iOS/Android browser version — overrides all 100vh quirks */
+     on every iOS/Android browser version — overrides all 100vh quirks.
+     With viewport-fit:cover, extend to full screen including safe areas. */
   html{overflow:hidden}
-  body{position:fixed;top:0;left:0;right:0;bottom:0;height:auto!important;overflow:hidden}
+  body{position:fixed;top:0;left:0;right:0;bottom:0;height:auto!important;overflow:hidden;
+    /* Reserve space for iPhone home indicator at bottom */
+    padding-bottom:env(safe-area-inset-bottom,0px)}
+  /* Panel (bottom sheet) — internal bottom padding avoids home indicator */
+  .panel{padding-bottom:env(safe-area-inset-bottom,0px)}
 
   /* Header compact */
   header{padding:6px 10px;gap:6px;min-height:44px}
@@ -236,17 +241,23 @@ select{width:100%;padding:5px 8px;border:1px solid var(--brd);border-radius:6px;
 /* ── Phone landscape (height ≤ 500 px, width > 500 px) ── */
 @media(max-height:500px) and (min-width:500px){
   html{overflow:hidden}
-  body{position:fixed;top:0;left:0;right:0;bottom:0;height:auto!important;overflow:hidden}
-  header{padding:4px 10px;min-height:36px}
+  /* viewport-fit:cover extends body to full physical screen (incl. notch area).
+     padding-left/right keep content clear of notch / Dynamic Island. */
+  body{position:fixed;top:0;left:0;right:0;bottom:0;height:auto!important;overflow:hidden;
+    padding-left:env(safe-area-inset-left,0px);
+    padding-right:env(safe-area-inset-right,0px);
+    padding-bottom:env(safe-area-inset-bottom,0px)}
+  header{padding:4px max(10px,env(safe-area-inset-right,0px)) 4px max(10px,env(safe-area-inset-left,0px));min-height:36px}
   header h1{font-size:.8rem}
   header>div:first-child>div{display:none}
   .flow-pills{display:none}
   .mob-toggle{display:flex}
   .mob-handle{display:none}
 
-  /* Panel → left drawer */
+  /* Panel → left drawer.
+     Left edge starts at safe-area so the drawer itself is never behind the notch. */
   .panel{
-    position:fixed;left:0;top:0;bottom:0;
+    position:fixed;left:env(safe-area-inset-left,0px);top:0;bottom:0;
     width:min(78vw,290px);min-width:0;border-right:2px solid var(--brd);
     z-index:1000;
     transform:translateX(-100%);
@@ -257,7 +268,7 @@ select{width:100%;padding:5px 8px;border:1px solid var(--brd);border-radius:6px;
   .panel.mob-open{transform:translateX(0)}
 
   /* Tablet query sets width:240px — override since panel is fixed */
-  .panel{width:min(78vw,290px)!important;min-width:0!important}
+  .panel{left:env(safe-area-inset-left,0px)!important;width:min(78vw,290px)!important;min-width:0!important}
 
   .display{flex:1;min-width:0}
   .compare{flex:1;min-height:60px}
