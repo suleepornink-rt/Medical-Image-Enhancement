@@ -182,59 +182,82 @@ select{width:100%;padding:5px 8px;border:1px solid var(--brd);border-radius:6px;
 .mob-backdrop.open{display:block}
 /* ── Bottom sheet drag handle ── */
 .mob-handle{width:40px;height:4px;background:#d1d5db;border-radius:2px;margin:10px auto 4px;display:none}
-@media(max-width:767px){.mob-handle{display:block}}
 
-/* ── Phone (≤ 767 px) ── */
+/* ── iOS Safari fill-available fix (applies to all mobile) ── */
+@supports(-webkit-touch-callout:none){
+  html{height:-webkit-fill-available}
+  body{height:-webkit-fill-available}
+}
+
+/* ── Phone portrait (≤ 767 px wide) ── */
 @media(max-width:767px){
-  /* iOS Safari dynamic viewport fix */
-  html{height:100%;height:-webkit-fill-available}
-  body{height:100vh;height:100dvh;height:-webkit-fill-available}
+  body{height:100dvh}
 
-  /* Header — compact */
+  /* Header compact */
   header{padding:6px 10px;gap:6px;min-height:44px}
   header h1{font-size:.88rem}
   header>div:first-child>div{display:none}
   .flow-pills{display:none}
   .mob-toggle{display:flex}
+  .mob-handle{display:block}
 
-  /* Panel → fixed BOTTOM SHEET */
+  /* Panel → bottom sheet */
   .panel{
-    position:fixed;
-    left:0;right:0;bottom:0;
-    width:100%;min-width:0;
-    border-right:none;
+    position:fixed;left:0;right:0;bottom:0;
+    width:100%;min-width:0;border-right:none;
     border-top:2px solid var(--pri2);
     border-radius:16px 16px 0 0;
-    z-index:1000;
-    max-height:0;
-    overflow:hidden;
+    z-index:1000;max-height:0;overflow:hidden;
     transition:max-height .32s cubic-bezier(.4,0,.2,1);
     box-shadow:0 -8px 30px rgba(0,0,0,.28);
   }
   .panel.mob-open{max-height:65vh;overflow-y:auto}
 
-  /* Display fills all remaining space */
   .display{flex:1;min-width:0}
   .compare{flex:1;min-height:80px}
-
-  /* Bottom bar — slim, no histogram */
   .bottom-bar{height:116px;min-height:116px}
   .hist-panel{display:none}
   .steps{flex:1;overflow-x:auto}
   .step-item{min-width:74px}
   .step-item .slbl{font-size:.5rem;padding:2px 4px}
-
-  /* Help modal */
   .help-box{width:calc(100vw - 14px);max-height:88vh;margin:8px auto}
   .help-body{padding:10px 12px}
-
-  /* Zoom */
   .zoom-topbar{flex-wrap:wrap;gap:5px;padding:6px 10px}
-  .zoom-btn{padding:4px 9px;font-size:.68rem}
-
-  /* Buttons */
   .btns{flex-wrap:wrap;gap:4px;padding:5px 8px}
   .btn{flex:none;min-width:0;padding:5px 8px;font-size:.64rem}
+}
+
+/* ── Phone landscape (short viewport ≤ 500 px tall, wider than 500 px) ── */
+@media(max-height:500px) and (min-width:500px){
+  body{height:100dvh}
+  header{padding:4px 10px;min-height:36px}
+  header h1{font-size:.8rem}
+  header>div:first-child>div{display:none}
+  .flow-pills{display:none}
+  .mob-toggle{display:flex}
+  .mob-handle{display:none}
+
+  /* Panel → left drawer (horizontal space available in landscape) */
+  .panel{
+    position:fixed;left:0;top:0;bottom:0;
+    width:min(78vw,290px);min-width:0;border-right:2px solid var(--brd);
+    z-index:1000;
+    transform:translateX(-100%);
+    transition:transform .26s cubic-bezier(.4,0,.2,1);
+    overflow-y:auto;overflow-x:hidden;
+    box-shadow:6px 0 24px rgba(0,0,0,.3);
+  }
+  .panel.mob-open{transform:translateX(0)}
+
+  .display{flex:1;min-width:0}
+  .compare{flex:1;min-height:60px}
+  .bottom-bar{height:88px;min-height:88px}
+  .hist-panel{display:none}
+  .steps{flex:1;overflow-x:auto}
+  .step-item{min-width:66px}
+  .step-item .slbl{font-size:.48rem;padding:2px 3px}
+  .btns{flex-wrap:wrap;gap:3px;padding:4px 6px}
+  .btn{flex:none;padding:4px 7px;font-size:.6rem}
 }
 </style>
 </head>
@@ -2183,6 +2206,46 @@ window.addEventListener('mousemove',function(e){
 
 window.addEventListener('mouseup',function(){zoom.dragging=false;zoomOverlay.classList.remove('dragging')});
 
+// === ZOOM — touch support (pan + pinch-to-zoom) ===
+var _tz={active:false,startX:0,startY:0,startPanX:0,startPanY:0,pinching:false,startDist:0,startScale:1,midX:0,midY:0};
+zoomViewport.addEventListener('touchstart',function(e){
+  e.preventDefault();
+  if(e.touches.length===1){
+    _tz.active=true;_tz.pinching=false;
+    _tz.startX=e.touches[0].clientX;_tz.startY=e.touches[0].clientY;
+    _tz.startPanX=zoom.panX;_tz.startPanY=zoom.panY;
+  } else if(e.touches.length===2){
+    _tz.pinching=true;_tz.active=false;
+    var dx=e.touches[0].clientX-e.touches[1].clientX;
+    var dy=e.touches[0].clientY-e.touches[1].clientY;
+    _tz.startDist=Math.sqrt(dx*dx+dy*dy)||1;
+    _tz.startScale=zoom.scale;
+    _tz.midX=(e.touches[0].clientX+e.touches[1].clientX)/2;
+    _tz.midY=(e.touches[0].clientY+e.touches[1].clientY)/2;
+  }
+},{passive:false});
+zoomViewport.addEventListener('touchmove',function(e){
+  e.preventDefault();
+  if(_tz.pinching&&e.touches.length===2){
+    var dx=e.touches[0].clientX-e.touches[1].clientX;
+    var dy=e.touches[0].clientY-e.touches[1].clientY;
+    var dist=Math.sqrt(dx*dx+dy*dy)||1;
+    var newScale=Math.max(0.1,Math.min(20,_tz.startScale*(dist/_tz.startDist)));
+    // Zoom toward pinch midpoint
+    var rect=zoomViewport.getBoundingClientRect();
+    var mx=_tz.midX-rect.left,my=_tz.midY-rect.top;
+    zoom.panX=mx-(mx-zoom.panX)*(newScale/zoom.scale);
+    zoom.panY=my-(my-zoom.panY)*(newScale/zoom.scale);
+    zoom.scale=newScale;
+    updateZoomTransform();
+  } else if(_tz.active&&e.touches.length===1){
+    zoom.panX=_tz.startPanX+(e.touches[0].clientX-_tz.startX);
+    zoom.panY=_tz.startPanY+(e.touches[0].clientY-_tz.startY);
+    updateZoomTransform();
+  }
+},{passive:false});
+zoomViewport.addEventListener('touchend',function(){_tz.active=false;_tz.pinching=false;});
+
 document.addEventListener('keydown',function(e){if(e.key==='Escape')closeZoom()});
 
 // === ZOOM — dblclick on any canvas opens zoom viewer ===
@@ -2199,18 +2262,33 @@ function toggleZoomMode(){
   openZoom('procCanvas','Processed');
 }
 
-// dblclick on any canvas opens zoom for that canvas
+// dblclick / double-tap on any canvas opens zoom for that canvas
 (function(){
+  var _tapLast={},_tapTimer={};
   Object.keys(_zoomTitles).forEach(function(cid){
     var el=document.getElementById(cid);
     if(!el)return;
     el.setAttribute('data-zoomable','1');
+    // Mouse dblclick (desktop)
     el.addEventListener('dblclick',function(e){
       e.stopPropagation();e.preventDefault();
-      // Don't open zoom if another tool mode is active (user may be placing points)
       if(_labelMode||_rulerMode||_profileMode)return;
       openZoom(cid,_zoomTitles[cid]);
     });
+    // Touch double-tap (mobile)
+    el.addEventListener('touchend',function(e){
+      var now=Date.now();
+      if(now-(_tapLast[cid]||0)<340){
+        clearTimeout(_tapTimer[cid]);
+        e.preventDefault();
+        if(_labelMode||_rulerMode||_profileMode)return;
+        openZoom(cid,_zoomTitles[cid]);
+        _tapLast[cid]=0;
+      } else {
+        _tapLast[cid]=now;
+        _tapTimer[cid]=setTimeout(function(){_tapLast[cid]=0;},350);
+      }
+    },{passive:false});
   });
 })();
 
@@ -2714,7 +2792,9 @@ function toggleMobilePanel(){
   var bd=document.getElementById('mobBackdrop');
   var open=p.classList.toggle('mob-open');
   if(bd)bd.classList.toggle('open',open);
-  btn.textContent=open?'▼ Close':'▲ Controls';
+  // Portrait = bottom sheet (▲/▼), Landscape = left drawer (☰/✕)
+  var landscape=window.innerHeight<window.innerWidth&&window.innerHeight<=500;
+  btn.textContent=open?(landscape?'✕ Close':'▼ Close'):(landscape?'☰ Controls':'▲ Controls');
 }
 
 // === HELP MODAL ===
